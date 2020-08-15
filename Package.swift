@@ -1,4 +1,4 @@
-// swift-tools-version:5.2
+// swift-tools-version:5.3
 //
 //  Package.swift
 //
@@ -27,8 +27,14 @@ import PackageDescription
 
 let package = Package(name: "Firewalk",
                       platforms: [.macOS(.v10_15)],
-                      dependencies: [.package(url: "https://github.com/vapor/vapor.git", from: "4.25.0")],
+                      dependencies: [.package(url: "https://github.com/vapor/vapor.git", from: "4.27.0")],
                       targets: [.target(name: "firewalk", dependencies: ["FirewalkApp"]),
-                                .target(name: "FirewalkApp", dependencies: [.product(name: "Vapor", package: "vapor")]),
-                                .testTarget(name: "FirewalkTests", dependencies: [.target(name: "FirewalkApp"),
-                                                                                  .product(name: "XCTVapor", package: "vapor")])])
+                                .target(name: "FirewalkApp",
+                                        dependencies: [.product(name: "Vapor", package: "vapor")],
+                                        resources: [.copy("Resources/image.png"),
+                                                    .copy("Resources/image.heic"),
+                                                    .copy("Resources/image.pdf"),
+                                                    .copy("Resources/image.jpeg")]),
+                                .testTarget(name: "FirewalkTests",
+                                            dependencies: [.target(name: "FirewalkApp"),
+                                                           .product(name: "XCTVapor", package: "vapor")])])
