@@ -1,0 +1,43 @@
+name: Produce Release Artifacts and Bump Tap
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  release:
+    name: Upload Release Artifact
+    runs-on: macos-latest    
+    env: 
+      DEVELOPER_DIR: /Applications/Xcode_11.6.app/Contents/Developer
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build for Release
+        run: swift build -c release
+      - name: "Zip Artifacts"
+        run: zip -r ./firewalk.zip --junk-paths .build/release/firewalk # Add resources later.
+      - name: "Generate Release URL"
+        run: echo "::set-output name=upload_url::https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$(jq --raw-output '.release.id' $GITHUB_EVENT_PATH)/assets{?name,label}"  
+        id: release
+      - name: "Upload Assets"
+        uses: "actions/upload-release-asset@v1"
+        env:
+          GITHUB_TOKEN: ${{ secrets.FIREWALK_RELEASE }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ./firewalk.zip
+          asset_name: firewalk.zip
+          asset_content_type: application/zip
+        id: upload
+      - name: "Bump Tap"
+        uses: mislav/bump-homebrew-formula-action@v1
+        env:
+          COMMITTER_TOKEN: ${{ secrets.FIREWALK_RELEASE }}
+        if: "!contains(github.ref, '-')" # skip prereleases
+        with:
+          formula-name: firewalk
+          homebrew-tap: Alamofire/homebrew-alamofire
+          base-branch: master
+          download-url: ${{ steps.upload.outputs.browser_download_url }}
+          commit-message: Firewalk Release
