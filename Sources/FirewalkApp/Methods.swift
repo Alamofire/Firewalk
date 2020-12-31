@@ -64,8 +64,9 @@ func createMethodRoutes(for app: Application) throws {
     // TODO: Vapor should handle more types of redirects.
     app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "redirect-to") { request -> Response in
         let url = try request.query.get(RedirectURL.self).url
+        let statusCode = try? request.query.get(RedirectStatusCode.self).statusCode
 
-        let response = Response(status: .found)
+        let response = Response(status: statusCode.map { HTTPResponseStatus(statusCode: $0) } ?? .found)
         response.headers.replaceOrAdd(name: .location, value: url)
 
         return response

@@ -33,13 +33,14 @@ public func configure(_ app: Application) throws {
 
     app.routes.defaultMaxBodySize = 10_000_000
 
-    try createXMLRoute(for: app)
-    try createMethodRoutes(for: app)
-    try createIPRoute(for: app)
     try createBasicAuthRoutes(for: app)
-    try createDigestAuthRoute(for: app)
-    try createWebSocketRoutes(for: app)
+    try createCompressionRoutes(for: app)
     try createDataRoutes(for: app)
+    try createDigestAuthRoute(for: app)
+    try createIPRoute(for: app)
     try createImageRoutes(for: app)
     try createInspectionRoutes(for: app)
+    try createMethodRoutes(for: app)
+    try createWebSocketRoutes(for: app)
+    try createXMLRoute(for: app)
 }

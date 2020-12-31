@@ -1,5 +1,5 @@
 //
-//  Replies.swift
+//  BasicAuth.swift
 //
 //  Copyright (c) 2020 Alamofire Software Foundation (http://alamofire.org/)
 //
@@ -24,35 +24,25 @@
 
 import Vapor
 
-struct Reply: Content {
-    let url: String
-    let origin: String
-    let headers: HTTPHeaders
-    let data: String?
-    let form: [String: String]?
-    let args: [String: String]
-}
+func createCompressionRoutes(for app: Application) throws {
+    app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "brotli") { request -> Response in
+        let response = Response(status: .permanentRedirect)
+        response.headers.replaceOrAdd(name: .location, value: "https://httpbin.org/brotli")
 
-extension Reply {
-    init(to request: Request) throws {
-        url = "\(request.application.http.server.configuration.address)\(request.url.string)"
-        origin = request.remoteAddress?.description ?? "No remote address."
-        headers = request.headers
-        let bodyString = request.body.string
-        data = (bodyString?.isEmpty == true) ? nil : bodyString
-        form = try? request.content.get([String: String].self, at: [])
-        args = try request.query.get([String: String].self, at: [])
+        return response
     }
-}
+    
+    app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "gzip") { request -> Response in
+        let response = Response(status: .permanentRedirect)
+        response.headers.replaceOrAdd(name: .location, value: "https://httpbin.org/gzip")
 
-struct IPReply: Content {
-    let origin: String
-}
+        return response
+    }
+    
+    app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "deflate") { request -> Response in
+        let response = Response(status: .permanentRedirect)
+        response.headers.replaceOrAdd(name: .location, value: "https://httpbin.org/deflate")
 
-struct RedirectURL: Decodable {
-    let url: String
-}
-
-struct RedirectStatusCode: Decodable {
-    let statusCode: Int
+        return response
+    }
 }
