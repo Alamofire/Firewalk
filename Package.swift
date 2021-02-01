@@ -27,7 +27,7 @@ import PackageDescription
 
 let package = Package(name: "Firewalk",
                       platforms: [.macOS(.v10_15)],
-                      dependencies: [.package(url: "https://github.com/vapor/vapor.git", from: "4.36.0")],
+                      dependencies: [.package(url: "https://github.com/vapor/vapor.git", from: "4.39.0")],
                       targets: [.target(name: "firewalk", dependencies: ["FirewalkApp"]),
                                 .target(name: "FirewalkApp", dependencies: [.product(name: "Vapor", package: "vapor")]),
                                 .testTarget(name: "FirewalkTests", dependencies: [.target(name: "FirewalkApp"),
