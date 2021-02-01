@@ -23,11 +23,15 @@
 //
 
 import Vapor
+import NIOWebSocket
 
 func createWebSocketRoutes(for app: Application) throws {
-    app.webSocket("websocket") { _, socket in
-        socket.send("reply")
-        _ = socket.close(code: .normalClosure)
+    app.webSocket("websocket") { request, socket in
+        let closeCode = (try? request.query.decode(WebSocketOptions.self).closeCode) ?? .normalClosure
+        let payload = try Reply(to: request)
+        let payloadBuffer = try JSONEncoder().encodeAsByteBuffer(payload, allocator: app.allocator)
+        socket.send(payloadBuffer)
+        _ = socket.close(code: closeCode)
     }
 
     app.webSocket("websocket", "payloads", ":count") { request, socket in
@@ -37,7 +41,7 @@ func createWebSocketRoutes(for app: Application) throws {
             let payloadBuffer = try JSONEncoder().encodeAsByteBuffer(payload, allocator: app.allocator)
 
             for _ in 0..<count {
-                socket.send(raw: payloadBuffer.readableBytesView, opcode: .binary)
+                socket.send(payloadBuffer)
             }
 
             _ = socket.close(code: .normalClosure)
@@ -45,5 +49,49 @@ func createWebSocketRoutes(for app: Application) throws {
             request.application.logger.error("\(error.localizedDescription)")
             _ = socket.close(code: .unexpectedServerError)
         }
+    }
+    
+    app.webSocket("websocket", "echo") { request, socket in
+        socket.onBinary { (socket, buffer) in
+            request.application.logger.info("Sending echo.")
+            socket.send(buffer)
+        }
+    }
+}
+
+struct WebSocketOptions: Decodable {
+    let closeCode: WebSocketErrorCode
+}
+
+extension WebSocketErrorCode: Decodable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        
+        let rawCode = try container.decode(Int.self)
+        self = Self(codeNumber: rawCode)
+    }
+}
+
+extension RoutesBuilder {
+    @discardableResult
+    public func webSocket(
+        _ path: PathComponent...,
+        maxFrameSize: WebSocketMaxFrameSize = .`default`,
+        onUpgrade: @escaping (Request, WebSocket) throws -> ()
+    ) -> Route {
+        webSocket(path, maxFrameSize: maxFrameSize) { request, socket in
+            do {
+                try onUpgrade(request, socket)
+            } catch {
+                request.application.logger.error("\(error.localizedDescription)")
+                _ = socket.close(code: .unexpectedServerError)
+            }
+        }
+    }
+}
+
+extension WebSocket {
+    func send(_ buffer: ByteBuffer, promise: EventLoopPromise<Void>? = nil) {
+        send(raw: buffer.readableBytesView, opcode: .binary)
     }
 }
