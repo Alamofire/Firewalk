@@ -40,7 +40,7 @@ final class AppTests: XCTestCase {
 
         // Then
         XCTAssertEqual(response?.status, .ok)
-        XCTAssertEqual(value?.url, "/get")
+        XCTAssertEqual(value?.url, "http://127.0.0.1:8080/get")
     }
 
     func testPost() throws {
@@ -57,7 +57,7 @@ final class AppTests: XCTestCase {
 
         // Then
         XCTAssertEqual(response?.status, .ok)
-        XCTAssertEqual(value?.url, "/post")
+        XCTAssertEqual(value?.url, "http://127.0.0.1:8080/post")
     }
 
     func testGetWithQueryParameters() throws {
@@ -74,7 +74,7 @@ final class AppTests: XCTestCase {
 
         // Then
         XCTAssertEqual(response?.status, .ok)
-        XCTAssertEqual(value?.url, "/get?one=one&two=two")
+        XCTAssertEqual(value?.url, "http://127.0.0.1:8080/get?one=one&two=two")
         XCTAssertEqual(value?.args, ["one": "one", "two": "two"])
     }
 
@@ -92,7 +92,7 @@ final class AppTests: XCTestCase {
 
         // Then
         XCTAssertEqual(response?.status, .ok)
-        XCTAssertEqual(value?.url, "/get?one=one&two=two")
+        XCTAssertEqual(value?.url, "http://127.0.0.1:8080/get?one=one&two=two")
         XCTAssertEqual(value?.args, ["one": "one", "two": "two"])
     }
 
@@ -112,7 +112,7 @@ final class AppTests: XCTestCase {
 
             // Then
             XCTAssertEqual(response?.status, .ok)
-            XCTAssertEqual(value?.url, "/\(method.rawValue.lowercased())")
+            XCTAssertEqual(value?.url, "http://127.0.0.1:8080/\(method.rawValue.lowercased())")
         }
     }
 
@@ -281,24 +281,6 @@ final class AppTests: XCTestCase {
         // Then
         XCTAssertEqual(response?.status, .found)
         XCTAssertEqual(response?.headers.first(name: .location), "URL")
-    }
-
-    func testThatStreamReturnsAppropriateCount() throws {
-        // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        let count = 5
-        var response: XCTHTTPResponse?
-
-        // When
-        try app.test(.GET, "stream/\(count)", into: &response)
-
-        // Then
-        let replies = response?.body.string.components(separatedBy: "}{")
-        XCTAssertEqual(replies?.count, count)
-        XCTAssertEqual(response?.status, .ok)
     }
 }
 
