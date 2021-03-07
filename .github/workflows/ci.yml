@@ -17,4 +17,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: SPM Test
-        run: swift test -c debug --sanitize=thread\
+        run: swift test -c debug --sanitize=thread
