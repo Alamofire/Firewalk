@@ -50,7 +50,7 @@ struct BasicPathAuthenticator: BasicAuthenticator {
 
     func authenticate(basic: BasicAuthorization, for request: Request) -> EventLoopFuture<Void> {
         guard let username = request.parameters["user", as: String.self],
-            let password = request.parameters["passwd", as: String.self] else {
+              let password = request.parameters["passwd", as: String.self] else {
             return request.eventLoop.makeFailedFuture(Error.invalidRequest)
         }
 

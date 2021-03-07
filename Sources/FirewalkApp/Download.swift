@@ -31,17 +31,17 @@ func createDownloadRoutes(for app: Application) throws {
               totalCount.isMultiple(of: 10) else {
             return .init(status: .badRequest)
         }
-        
+
         let shouldProduceError = (try? request.query.get(Bool.self, at: "shouldProduceError")) ?? false
-        
+
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.dateFormat = "EEE, dd MMM yyyy hh:mm:ss zzz"
         let lastModified = formatter.string(from: Date(timeIntervalSinceReferenceDate: 0))
-        
+
         let response: Response
-        
+
         if let range = request.headers.range {
             let byteCount = range.ranges.reduce(0) { result, value in
                 switch value {
@@ -53,10 +53,10 @@ func createDownloadRoutes(for app: Application) throws {
                     return result + (end - start)
                 }
             }
-            
+
             let buffer = request.application.allocator.buffer(repeating: UInt8.random(), count: byteCount)
             response = Response(status: .partialContent, body: .init(buffer: buffer))
-            response.headers.contentRange = .init(unit: .bytes, range: .within(start: (totalCount - byteCount), end: totalCount))
+            response.headers.contentRange = .init(unit: .bytes, range: .within(start: totalCount - byteCount, end: totalCount))
         } else {
             var buffer = request.application.allocator.buffer(repeating: UInt8.random(), count: totalCount)
             response = Response(body: .init(stream: { writer in
@@ -64,7 +64,7 @@ func createDownloadRoutes(for app: Application) throws {
                 let segment = (totalCount / 10)
                 request.eventLoop.scheduleRepeatedTask(initialDelay: .seconds(0), delay: .milliseconds(1)) { task in
                     guard bytesToSend > 0 else { task.cancel(); _ = writer.write(.end); return }
-                    
+
                     if shouldProduceError, bytesToSend < (totalCount / 2) {
                         task.cancel()
                         _ = writer.write(.error(URLError(.networkConnectionLost)))
@@ -79,10 +79,10 @@ func createDownloadRoutes(for app: Application) throws {
             response.headers.replaceOrAdd(name: .contentLength, value: "\(totalCount)")
             response.headers.remove(name: .transferEncoding)
         }
-        
+
         response.headers.replaceOrAdd(name: .contentType, value: "application/octet-stream")
         response.headers.add(name: .lastModified, value: lastModified)
-        
+
         return response
     }
 }

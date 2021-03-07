@@ -25,21 +25,21 @@
 import Vapor
 
 func createCompressionRoutes(for app: Application) throws {
-    app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "brotli") { request -> Response in
+    app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "brotli") { _ -> Response in
         let response = Response(status: .permanentRedirect)
         response.headers.replaceOrAdd(name: .location, value: "https://httpbin.org/brotli")
 
         return response
     }
-    
-    app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "gzip") { request -> Response in
+
+    app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "gzip") { _ -> Response in
         let response = Response(status: .permanentRedirect)
         response.headers.replaceOrAdd(name: .location, value: "https://httpbin.org/gzip")
 
         return response
     }
-    
-    app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "deflate") { request -> Response in
+
+    app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "deflate") { _ -> Response in
         let response = Response(status: .permanentRedirect)
         response.headers.replaceOrAdd(name: .location, value: "https://httpbin.org/deflate")
 

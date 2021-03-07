@@ -42,8 +42,8 @@ func createDigestAuthRoute(for app: Application) throws {
 
     app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "digest-auth", ":qop", ":user", ":passwd") { request -> Response in
         guard let qop = request.parameters["qop", as: String.self],
-            let username = request.parameters["user", as: String.self],
-            let password = request.parameters["passwd", as: String.self] else { return Response(status: .badRequest) }
+              let username = request.parameters["user", as: String.self],
+              let password = request.parameters["passwd", as: String.self] else { return Response(status: .badRequest) }
 
         let response = Response(status: .permanentRedirect)
         response.headers.replaceOrAdd(name: .location, value: "https://httpbin.org/digest-auth/\(qop)/\(username)/\(password)")

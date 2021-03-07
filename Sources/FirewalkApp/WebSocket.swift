@@ -22,8 +22,8 @@
 //  THE SOFTWARE.
 //
 
-import Vapor
 import NIOWebSocket
+import Vapor
 
 func createWebSocketRoutes(for app: Application) throws {
     app.webSocket("websocket") { request, socket in
@@ -50,9 +50,9 @@ func createWebSocketRoutes(for app: Application) throws {
             _ = socket.close(code: .unexpectedServerError)
         }
     }
-    
+
     app.webSocket("websocket", "echo") { request, socket in
-        socket.onBinary { (socket, buffer) in
+        socket.onBinary { socket, buffer in
             request.application.logger.info("Sending echo.")
             socket.send(buffer)
         }
@@ -66,7 +66,7 @@ struct WebSocketOptions: Decodable {
 extension WebSocketErrorCode: Decodable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        
+
         let rawCode = try container.decode(Int.self)
         self = Self(codeNumber: rawCode)
     }
@@ -74,11 +74,9 @@ extension WebSocketErrorCode: Decodable {
 
 extension RoutesBuilder {
     @discardableResult
-    public func webSocket(
-        _ path: PathComponent...,
-        maxFrameSize: WebSocketMaxFrameSize = .`default`,
-        onUpgrade: @escaping (Request, WebSocket) throws -> ()
-    ) -> Route {
+    public func webSocket(_ path: PathComponent...,
+                          maxFrameSize: WebSocketMaxFrameSize = .default,
+                          onUpgrade: @escaping (Request, WebSocket) throws -> Void) -> Route {
         webSocket(path, maxFrameSize: maxFrameSize) { request, socket in
             do {
                 try onUpgrade(request, socket)
