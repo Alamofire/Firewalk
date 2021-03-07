@@ -33,12 +33,4 @@ func createImageRoutes(for app: Application) throws {
 
         return response
     }
-
-    // Vapor doesn't support resume ranges, so forward to original test file.
-    app.on(.GET, "image", "large") { _ -> Response in
-        let response = Response(status: .permanentRedirect)
-        response.headers.replaceOrAdd(name: .location, value: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/HubbleDeepField.800px.jpg/2048px-HubbleDeepField.800px.jpg")
-
-        return response
-    }
 }
