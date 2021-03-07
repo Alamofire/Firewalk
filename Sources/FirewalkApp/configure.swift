@@ -37,6 +37,7 @@ public func configure(_ app: Application) throws {
     try createCompressionRoutes(for: app)
     try createDataRoutes(for: app)
     try createDigestAuthRoute(for: app)
+    try createDownloadRoutes(for: app)
     try createIPRoute(for: app)
     try createImageRoutes(for: app)
     try createInspectionRoutes(for: app)
