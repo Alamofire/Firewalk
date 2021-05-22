@@ -28,15 +28,15 @@ import Vapor
 
 func createWebSocketRoutes(for app: Application) throws {
     let closeDelay: TimeAmount = .milliseconds(30)
-    
+
     app.webSocket("websocket") { request, socket in
         let closeCode = (try? request.query.decode(WebSocketOptions.self).closeCode) ?? .normalClosure
         let payload = try Reply(to: request)
         let payloadBuffer = try JSONEncoder().encodeAsByteBuffer(payload, allocator: app.allocator)
-        
+
         let promise = request.eventLoop.makePromise(of: Void.self)
         socket.send(payloadBuffer, promise: promise)
-        
+
         _ = promise.futureResult.always { _ in
             request.eventLoop.scheduleTask(in: closeDelay) {
                 _ = socket.close(code: closeCode)
@@ -56,11 +56,11 @@ func createWebSocketRoutes(for app: Application) throws {
                 socket.send(payloadBuffer, promise: promise)
                 return promise.futureResult
             }
-            
+
             let afterAll = first.fold(futures) { _, _ in
                 request.eventLoop.makeSucceededVoidFuture()
             }
-            
+
             _ = afterAll.always { _ in
                 request.eventLoop.scheduleTask(in: closeDelay) {
                     _ = socket.close(code: .normalClosure)
@@ -72,11 +72,11 @@ func createWebSocketRoutes(for app: Application) throws {
         }
     }
 
-    app.webSocket("websocket", "echo") { request, socket in
+    app.webSocket("websocket", "echo") { _, socket in
         socket.onBinary { socket, buffer in
             socket.send(buffer)
         }
-        
+
         socket.onText { socket, string in
             socket.send(string)
         }
@@ -107,7 +107,7 @@ extension RoutesBuilder {
                 headers.add(name: .secWebSocketProtocol, value: `protocol`)
                 return headers
             }
-            
+
             return request.eventLoop.makeSucceededFuture(headers ?? [:])
         } onUpgrade: { request, socket in
             do {
