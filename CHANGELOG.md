@@ -3,7 +3,16 @@ All notable changes to this project will be documented in this file.
 `Firewalk` adheres to [Semantic Versioning](https://semver.org/).
 
 #### 0.x Releases
-- `0.x` Releases - [0.1.0](#010) | [0.2.0](#020) | [0.3.0](#030) | [0.4.0](#040) | [0.5.0](#050)
+- `0.x` Releases - [0.1.0](#010) | [0.2.0](#020) | [0.3.0](#030) | [0.4.0](#040) | [0.5.0](#050) | [0.6.0](#060)
+
+---
+
+## [0.6.0](https://github.com/Alamofire/Firewalk/releases/tag/0.6.0)
+Released on 2021-05-22.
+
+#### Fixed
+- Reliability of `websocket` endpoints for `URLSessionWebSocketTask` tests.
+  - Added by [Jon Shier](https://github.com/jshier) in PR [#13](https://github.com/Alamofire/Firewalk/pull/13).
 
 ---
 
