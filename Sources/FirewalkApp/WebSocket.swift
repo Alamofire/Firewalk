@@ -27,10 +27,12 @@ import NIOWebSocket
 import Vapor
 
 func createWebSocketRoutes(for app: Application) throws {
-    let closeDelay: TimeAmount = .milliseconds(30)
+    let defaultCloseDelay: TimeAmount = .milliseconds(30)
 
     app.webSocket("websocket") { request, socket in
-        let closeCode = (try? request.query.decode(WebSocketOptions.self).closeCode) ?? .normalClosure
+        let options = try? request.query.decode(WebSocketOptions.self)
+        let closeCode = options?.closeCode ?? .normalClosure
+        let closeDelay = options?.closeDelay.map(TimeAmount.milliseconds) ?? defaultCloseDelay
         let payload = try Reply(to: request)
         let payloadBuffer = try JSONEncoder().encodeAsByteBuffer(payload, allocator: app.allocator)
 
@@ -45,6 +47,9 @@ func createWebSocketRoutes(for app: Application) throws {
     }
 
     app.webSocket("websocket", "payloads", ":count") { request, socket in
+        let options = try? request.query.decode(WebSocketOptions.self)
+        let closeCode = options?.closeCode ?? .normalClosure
+        let closeDelay = options?.closeDelay.map(TimeAmount.milliseconds) ?? defaultCloseDelay
         let count = request.parameters["count", as: Int.self] ?? 1
         do {
             let payload = try Reply(to: request)
@@ -63,7 +68,7 @@ func createWebSocketRoutes(for app: Application) throws {
 
             _ = afterAll.always { _ in
                 request.eventLoop.scheduleTask(in: closeDelay) {
-                    _ = socket.close(code: .normalClosure)
+                    _ = socket.close(code: closeCode)
                 }
             }
         } catch {
@@ -84,7 +89,8 @@ func createWebSocketRoutes(for app: Application) throws {
 }
 
 struct WebSocketOptions: Decodable {
-    let closeCode: WebSocketErrorCode
+    let closeCode: WebSocketErrorCode?
+    let closeDelay: Int64?
 }
 
 extension WebSocketErrorCode: Decodable {
