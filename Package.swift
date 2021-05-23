@@ -1,8 +1,8 @@
-// swift-tools-version:5.2
+// swift-tools-version:5.3
 //
 //  Package.swift
 //
-//  Copyright (c) 2020 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2020-2021 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@ import PackageDescription
 
 let package = Package(name: "Firewalk",
                       platforms: [.macOS(.v10_15)],
-                      dependencies: [.package(url: "https://github.com/vapor/vapor.git", from: "4.41.0")],
+                      dependencies: [.package(url: "https://github.com/vapor/vapor.git", from: "4.45.0")],
                       targets: [.target(name: "firewalk", dependencies: ["FirewalkApp"]),
                                 .target(name: "FirewalkApp", dependencies: [.product(name: "Vapor", package: "vapor")]),
                                 .testTarget(name: "FirewalkTests", dependencies: [.target(name: "FirewalkApp"),
