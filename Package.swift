@@ -25,10 +25,17 @@
 
 import PackageDescription
 
+let swiftSettings: [SwiftSetting]
+#if os(Linux)
+swiftSettings = [.unsafeFlags(["-Xfrontend", "-validate-tbd-against-ir=none"])]
+#else
+swiftSettings = []
+#endif
+
 let package = Package(name: "Firewalk",
                       platforms: [.macOS(.v10_15)],
                       dependencies: [.package(url: "https://github.com/vapor/vapor.git", from: "4.45.0")],
                       targets: [.target(name: "firewalk", dependencies: ["FirewalkApp"]),
-                                .target(name: "FirewalkApp", dependencies: [.product(name: "Vapor", package: "vapor")]),
+                                .target(name: "FirewalkApp", dependencies: [.product(name: "Vapor", package: "vapor")], swiftSettings: swiftSettings),
                                 .testTarget(name: "FirewalkTests", dependencies: [.target(name: "FirewalkApp"),
                                                                                   .product(name: "XCTVapor", package: "vapor")])])
