@@ -5,16 +5,18 @@ on:
     branches: 
       - master
     paths:
-      - 'Source/**'
+      - 'Sources/**'
       - 'Tests/**'
-      - '.github/workflows'
+      - '.github/workflows/**'
+      - 'Package.swift'
   pull_request:
     branches: 
       - '*'
     paths:
-      - 'Source/**'
+      - 'Sources/**'
       - 'Tests/**'
-      - '.github/workflows'
+      - '.github/workflows/**'
+      - 'Package.swift'
 
 jobs:
   macOS:
