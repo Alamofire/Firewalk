@@ -1,20 +1,49 @@
 name: "Firewalk CI"
 
-on: 
+on:
   push:
     branches: 
       - master
+    paths:
+      - 'Source/**'
+      - 'Tests/**'
+      - '.github/workflows'
   pull_request:
     branches: 
       - '*'
+    paths:
+      - 'Source/**'
+      - 'Tests/**'
+      - '.github/workflows'
 
 jobs:
-  spm:
-    name: Test with SPM
+  macOS:
+    name: macOS
     runs-on: firebreak
     env: 
       DEVELOPER_DIR: /Applications/Xcode_12.5.app/Contents/Developer
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
       - name: SPM Test
         run: swift test -c debug --sanitize=thread
+  Linux:
+    name: Linux
+    runs-on: ubuntu-20.04
+    container:
+      image: swift:5.4.1-focal
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+      - name: SPM Linux Test
+        run:  swift test -c debug
+  Linux_Nightly:
+    name: Linux Nightly
+    runs-on: ubuntu-20.04
+    container:
+      image: swiftlang/swift:nightly-focal
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+      - name: SPM Linux Test
+        run:  swift test -c debug
