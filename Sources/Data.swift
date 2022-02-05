@@ -115,4 +115,24 @@ func createDataRoutes(for app: Application) throws {
         response.headers.replaceOrAdd(name: .contentType, value: "application/octet-stream")
         return response
     }
+
+    app.on(.GET, "infinite") { request -> Response in
+        Response(body: .init(stream: { writer in
+            let buffer = request.application.allocator.buffer(repeating: 1, count: 100_000_000)
+
+            func writeBuffer() {
+                writer.write(.buffer(buffer)).whenComplete { result in
+                    switch result {
+                    case .success:
+                        request.eventLoop.execute { writeBuffer() }
+                    case let .failure(error):
+                        request.application.logger.error("Infinite stream finished with error: \(error)")
+                        _ = writer.write(.end)
+                    }
+                }
+            }
+
+            writeBuffer()
+        }))
+    }
 }

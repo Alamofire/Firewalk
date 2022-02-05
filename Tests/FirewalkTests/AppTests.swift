@@ -22,7 +22,7 @@
 //  THE SOFTWARE.
 //
 
-@testable import FirewalkApp
+@testable import firewalk
 import XCTVapor
 
 final class AppTests: XCTestCase {
