@@ -1,8 +1,8 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.5
 //
 //  Package.swift
 //
-//  Copyright (c) 2020-2021 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2020-2022 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -34,8 +34,11 @@ swiftSettings = []
 
 let package = Package(name: "Firewalk",
                       platforms: [.macOS(.v10_15)],
-                      dependencies: [.package(url: "https://github.com/vapor/vapor.git", from: "4.45.0")],
-                      targets: [.target(name: "firewalk", dependencies: ["FirewalkApp"]),
-                                .target(name: "FirewalkApp", dependencies: [.product(name: "Vapor", package: "vapor")], swiftSettings: swiftSettings),
-                                .testTarget(name: "FirewalkTests", dependencies: [.target(name: "FirewalkApp"),
+                      products: [.executable(name: "firewalk", targets: ["firewalk"])],
+                      dependencies: [.package(url: "https://github.com/vapor/vapor.git", from: "4.55.0")],
+                      targets: [.executableTarget(name: "firewalk",
+                                                  dependencies: [.product(name: "Vapor", package: "vapor")],
+                                                  path: "Sources",
+                                                  swiftSettings: swiftSettings),
+                                .testTarget(name: "FirewalkTests", dependencies: [.target(name: "firewalk"),
                                                                                   .product(name: "XCTVapor", package: "vapor")])])

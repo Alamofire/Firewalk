@@ -1,7 +1,7 @@
 //
-//  configure.swift
+//  Firewalk.swift
 //
-//  Copyright (c) 2020 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2022 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -24,24 +24,14 @@
 
 import Vapor
 
-public func configure(_ app: Application) throws {
-    #if DEBUG
-    app.logger.logLevel = .info
-    #else
-    app.logger.logLevel = .critical
-    #endif
-
-    app.routes.defaultMaxBodySize = 10_000_000
-
-    try createBasicAuthRoutes(for: app)
-    try createCompressionRoutes(for: app)
-    try createDataRoutes(for: app)
-    try createDigestAuthRoute(for: app)
-    try createDownloadRoutes(for: app)
-    try createIPRoute(for: app)
-    try createImageRoutes(for: app)
-    try createInspectionRoutes(for: app)
-    try createMethodRoutes(for: app)
-    try createWebSocketRoutes(for: app)
-    try createXMLRoute(for: app)
+@main
+enum Firewalk {
+    static func main() throws {
+        var env = try Environment.detect()
+        try LoggingSystem.bootstrap(from: &env)
+        let app = Application(env)
+        defer { app.shutdown() }
+        try configure(app)
+        try app.run()
+    }
 }

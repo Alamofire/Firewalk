@@ -23,7 +23,7 @@ jobs:
     name: macOS
     runs-on: firebreak
     env: 
-      DEVELOPER_DIR: /Applications/Xcode_12.5.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_13.2.1.app/Contents/Developer
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
@@ -33,7 +33,7 @@ jobs:
     name: Linux
     runs-on: ubuntu-20.04
     container:
-      image: swift:5.4.1-focal
+      image: swift:5.5.3-focal
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
