@@ -10,13 +10,15 @@ on:
       - '.github/workflows/**'
       - 'Package.swift'
   pull_request:
-    branches: 
-      - '*'
     paths:
       - 'Sources/**'
       - 'Tests/**'
       - '.github/workflows/**'
       - 'Package.swift'
+
+concurrency: 
+  group: ${{ github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   macOS:
