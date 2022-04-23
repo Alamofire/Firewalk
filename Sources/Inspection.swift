@@ -30,19 +30,19 @@ func createInspectionRoutes(for app: Application) throws {
         let encodedHeaders = try JSONEncoder().encodeAsByteBuffer(query, allocator: app.allocator)
         return Response(status: .ok, headers: HTTPHeaders(query.map { $0 }), body: .init(buffer: encodedHeaders))
     }
-    
+
     @Protected var seenCaches: Set<String> = []
-    
+
     // A version of response-headers used for Cache-Control tests, which adds an older Date to the response the first
     // time it's seen.
     app.on(.GET, "cache") { request -> Response in
         let query = try request.query.decode([String: String].self)
-        
+
         guard let cache = query["Cache-Control"] else { return Response(status: .badRequest) }
-        
+
         let encodedHeaders = try JSONEncoder().encodeAsByteBuffer(query, allocator: app.allocator)
         let response = Response(status: .ok, headers: HTTPHeaders(query.map { $0 }), body: .init(buffer: encodedHeaders))
-        
+
         if seenCaches.contains(cache) {
             $seenCaches.write { $0.remove(cache) }
         } else {
@@ -50,7 +50,7 @@ func createInspectionRoutes(for app: Application) throws {
             let past = Date() - 5
             response.headers.replaceOrAdd(name: .date, value: DateFormatter.rfc1123.string(from: past))
         }
-        
+
         return response
     }
 }
