@@ -35,7 +35,7 @@ jobs:
     name: Linux
     runs-on: ubuntu-20.04
     container:
-      image: swift:5.6.2-focal
+      image: swift:5.6.1-focal
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
