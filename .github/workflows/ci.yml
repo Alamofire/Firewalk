@@ -5,16 +5,16 @@ on:
     branches: 
       - master
     paths:
-      - 'Sources/**'
-      - 'Tests/**'
       - '.github/workflows/**'
       - 'Package.swift'
+      - 'Sources/**'
+      - 'Tests/**'
   pull_request:
     paths:
-      - 'Sources/**'
-      - 'Tests/**'
       - '.github/workflows/**'
       - 'Package.swift'
+      - 'Sources/**'
+      - 'Tests/**'
 
 concurrency: 
   group: ${{ github.ref_name }}
@@ -24,33 +24,30 @@ jobs:
   macOS:
     name: macOS
     runs-on: firebreak
-    defaults:
-      run:
-        shell: "/usr/bin/arch -arch arm64e /bin/zsh {0}"
     env: 
-      DEVELOPER_DIR: /Applications/Xcode_13.3.1.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_14.0.app/Contents/Developer
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: SPM Test
         run: swift test -c debug --sanitize=thread
   Linux:
     name: Linux
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
-      image: swift:5.6.1-focal
+      image: swiftlang/swift:nightly-5.7-jammy
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: SPM Linux Test
         run:  swift test -c debug
   Linux_Nightly:
     name: Linux Nightly
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
-      image: swiftlang/swift:nightly-focal
+      image: swiftlang/swift:nightly-jammy
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: SPM Linux Test
         run:  swift test -c debug
