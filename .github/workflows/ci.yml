@@ -28,7 +28,7 @@ jobs:
       DEVELOPER_DIR: /Applications/Xcode_14.0.app/Contents/Developer
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: SPM Test
         run: swift test -c debug --sanitize=thread
   Linux:
@@ -38,7 +38,7 @@ jobs:
       image: swift:nightly-5.7-jammy
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: SPM Linux Test
         run:  swift test -c debug
   Linux_Nightly:
@@ -48,6 +48,6 @@ jobs:
       image: swiftlang/swift:nightly-jammy
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: SPM Linux Test
         run:  swift test -c debug
