@@ -33,9 +33,9 @@ jobs:
         run: swift test -c debug --sanitize=thread
   Linux:
     name: Linux
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
-      image: swift:5.6.1-focal
+      image: swift:nightly-5.7-jammy
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
@@ -43,9 +43,9 @@ jobs:
         run:  swift test -c debug
   Linux_Nightly:
     name: Linux Nightly
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container:
-      image: swiftlang/swift:nightly-focal
+      image: swiftlang/swift:nightly-jammy
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
