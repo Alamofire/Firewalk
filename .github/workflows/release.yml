@@ -8,8 +8,8 @@ jobs:
   release:
     name: Upload Release Artifact
     runs-on: firebreak
-    env: 
-      DEVELOPER_DIR: /Applications/Xcode_14.0.app/Contents/Developer
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_14.1.app/Contents/Developer
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -18,7 +18,7 @@ jobs:
       - name: "Zip Artifacts"
         run: zip -r ./firewalk.zip --junk-paths .build/apple/Products/Release/firewalk # Add resources later.
       - name: "Generate Release URL"
-        run: echo "::set-output name=upload_url::https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$(jq --raw-output '.release.id' $GITHUB_EVENT_PATH)/assets{?name,label}"  
+        run: echo "::set-output name=upload_url::https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$(jq --raw-output '.release.id' $GITHUB_EVENT_PATH)/assets{?name,label}"
         id: release
       - name: "Upload Assets"
         uses: "actions/upload-release-asset@v1"

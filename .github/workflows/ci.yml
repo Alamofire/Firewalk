@@ -2,21 +2,21 @@ name: "Firewalk CI"
 
 on:
   push:
-    branches: 
+    branches:
       - master
     paths:
-      - '.github/workflows/**'
-      - 'Package.swift'
-      - 'Sources/**'
-      - 'Tests/**'
+      - ".github/workflows/**"
+      - "Package.swift"
+      - "Sources/**"
+      - "Tests/**"
   pull_request:
     paths:
-      - '.github/workflows/**'
-      - 'Package.swift'
-      - 'Sources/**'
-      - 'Tests/**'
+      - ".github/workflows/**"
+      - "Package.swift"
+      - "Sources/**"
+      - "Tests/**"
 
-concurrency: 
+concurrency:
   group: ${{ github.ref_name }}
   cancel-in-progress: true
 
@@ -24,8 +24,8 @@ jobs:
   macOS:
     name: macOS
     runs-on: firebreak
-    env: 
-      DEVELOPER_DIR: /Applications/Xcode_14.0.app/Contents/Developer
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_14.1.app/Contents/Developer
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v3
@@ -40,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: SPM Linux Test
-        run:  swift test -c debug
+        run: swift test -c debug
   Linux_Nightly:
     name: Linux Nightly
     runs-on: ubuntu-22.04
@@ -50,4 +50,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: SPM Linux Test
-        run:  swift test -c debug
+        run: swift test -c debug
