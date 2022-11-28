@@ -1,7 +1,7 @@
 //
 //  Images.swift
 //
-//  Copyright (c) 2021 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2022 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -42,10 +42,12 @@ func createImageRoutes(for app: Application) throws {
 }
 
 private enum Image: String, Decodable {
-    case bmp, jp2, jpeg, gif, heic, heif, pdf, png, tiff, webp
+    case avif, bmp, jp2, jpeg, gif, heic, heif, pdf, png, tiff, webp
 
     var contentType: HTTPMediaType {
         switch self {
+        case .avif:
+            return HTTPMediaType(type: "image", subType: "avif")
         case .bmp:
             return HTTPMediaType(type: "image", subType: "x-ms-bmp")
         case .jp2:
@@ -71,6 +73,13 @@ private enum Image: String, Decodable {
 
     var encodedImage: String {
         switch self {
+        case .avif:
+            return """
+            AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF\
+            2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdj\
+            AxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xyb\
+            mNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgANogQEAwgMg8f8D///8WfhwB8+ErK42A=
+            """
         case .bmp:
             return "Qk0eAAAAAAAAABoAAAAMAAAAAQABAAEAGAAAAP8A"
         case .jp2:
