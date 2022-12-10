@@ -34,27 +34,27 @@ extension Request {
 
 extension Application {
     @discardableResult
-    func on<Response: ResponseEncodable>(_ methods: [HTTPMethod],
-                                         _ path: PathComponent...,
-                                         body: HTTPBodyStreamStrategy = .collect,
-                                         use closure: @escaping (Request) throws -> Response) -> [Route] {
+    func on(_ methods: [HTTPMethod],
+            _ path: PathComponent...,
+            body: HTTPBodyStreamStrategy = .collect,
+            use closure: @escaping (Request) throws -> some ResponseEncodable) -> [Route] {
         methods.map { on($0, path, body: body, use: closure) }
     }
 
     @discardableResult
-    func onMethods<Response: ResponseEncodable>(_ methods: [HTTPMethod],
-                                                body: HTTPBodyStreamStrategy = .collect,
-                                                use closure: @escaping (Request) throws -> Response) -> [Route] {
+    func onMethods(_ methods: [HTTPMethod],
+                   body: HTTPBodyStreamStrategy = .collect,
+                   use closure: @escaping (Request) throws -> some ResponseEncodable) -> [Route] {
         methods.map { on($0, .constant($0.rawValue.lowercased()), body: body, use: closure) }
     }
 }
 
 extension RoutesBuilder {
     @discardableResult
-    func on<Response: ResponseEncodable>(_ methods: [HTTPMethod],
-                                         _ path: PathComponent...,
-                                         body: HTTPBodyStreamStrategy = .collect,
-                                         use closure: @escaping (Request) throws -> Response) -> [Route] {
+    func on(_ methods: [HTTPMethod],
+            _ path: PathComponent...,
+            body: HTTPBodyStreamStrategy = .collect,
+            use closure: @escaping (Request) throws -> some ResponseEncodable) -> [Route] {
         methods.map { on($0, path, body: body, use: closure) }
     }
 }
