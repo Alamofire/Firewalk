@@ -71,7 +71,13 @@ func createDownloadRoutes(for app: Application) throws {
                         return
                     }
 
-                    _ = writer.write(.buffer(buffer.readSlice(length: segment)!))
+                    guard let bytes = buffer.readSlice(length: segment) else {
+                        request.logger.info("Failed to read \(segment) bytes from buffer with \(buffer.readableBytes) bytes, ending write.")
+                        task.cancel()
+                        return
+                    }
+
+                    _ = writer.write(.buffer(bytes))
                     bytesToSend -= segment
                 }
             }))
