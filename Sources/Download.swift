@@ -58,8 +58,8 @@ func createDownloadRoutes(for app: Application) throws {
             response = Response(status: .partialContent, body: .init(buffer: buffer))
             response.headers.contentRange = .init(unit: .bytes, range: .within(start: totalCount - byteCount, end: totalCount))
         } else {
-            var buffer = request.application.allocator.buffer(repeating: UInt8.random(), count: totalCount)
             response = Response(body: .init(stream: { writer in
+                var buffer = request.application.allocator.buffer(repeating: UInt8.random(), count: totalCount)
                 var bytesToSend = totalCount
                 let segment = (totalCount / 10)
                 request.eventLoop.scheduleRepeatedTask(initialDelay: .seconds(0), delay: .milliseconds(1)) { task in
@@ -71,7 +71,13 @@ func createDownloadRoutes(for app: Application) throws {
                         return
                     }
 
-                    _ = writer.write(.buffer(buffer.readSlice(length: segment)!))
+                    guard let bytes = buffer.readSlice(length: segment) else {
+                        request.logger.info("Failed to read \(segment) bytes from buffer with \(buffer.readableBytes) bytes, ending write.")
+                        task.cancel()
+                        return
+                    }
+
+                    _ = writer.write(.buffer(bytes))
                     bytesToSend -= segment
                 }
             }))
