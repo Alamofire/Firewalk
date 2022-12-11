@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [0.8.2](https://github.com/Alamofire/Firewalk/releases/tag/0.8.3)
+## [0.8.3](https://github.com/Alamofire/Firewalk/releases/tag/0.8.3)
 Released on 2022-12-10.
 
 #### Fixed
