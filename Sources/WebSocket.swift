@@ -86,7 +86,7 @@ func createWebSocketRoutes(for app: Application) throws {
             socket.send(string)
         }
     }
-    
+
     app.webSocket("websocket", "ping", ":count") { request, socket in
         var remainingPings = request.parameters["count", as: Int.self] ?? 1
         socket.onPing { _ in
