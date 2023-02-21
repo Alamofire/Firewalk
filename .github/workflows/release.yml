@@ -9,7 +9,7 @@ jobs:
     name: Upload Release Artifact
     runs-on: firebreak
     env:
-      DEVELOPER_DIR: /Applications/Xcode_14.1.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_14.2.app/Contents/Developer
     steps:
       - name: Checkout
         uses: actions/checkout@v3
