@@ -32,6 +32,7 @@ public func configure(_ app: Application) throws {
     #endif
 
     app.routes.defaultMaxBodySize = 10_000_000
+    app.http.server.configuration.requestDecompression = .enabled
 
     try createBasicAuthRoutes(for: app)
     try createCompressionRoutes(for: app)
