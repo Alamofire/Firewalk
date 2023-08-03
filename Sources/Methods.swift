@@ -29,7 +29,7 @@ func createMethodRoutes(for app: Application) throws {
 
     app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "delay", ":interval") { request -> EventLoopFuture<Reply> in
         guard let interval = request.parameters["interval", as: Int64.self], interval <= 10 else {
-            return request.eventLoop.future(try Reply(to: request))
+            return try request.eventLoop.future(Reply(to: request))
         }
 
         let scheduled = request.eventLoop.scheduleTask(in: .seconds(interval)) { try Reply(to: request) }

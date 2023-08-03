@@ -42,7 +42,7 @@ func createImageRoutes(for app: Application) throws {
 }
 
 private enum Image: String, Decodable {
-    case avif, bmp, jp2, jpeg, gif, heic, heif, pdf, png, tiff, webp
+    case avif, bmp, jp2, jpeg, jxl, gif, heic, heif, pdf, png, tiff, webp
 
     var contentType: HTTPMediaType {
         switch self {
@@ -54,6 +54,8 @@ private enum Image: String, Decodable {
             return HTTPMediaType(type: "image", subType: "jp2")
         case .jpeg:
             return .jpeg
+        case .jxl:
+            return HTTPMediaType(type: "image", subType: "jxl")
         case .gif:
             return .gif
         case .heic:
@@ -92,6 +94,11 @@ private enum Image: String, Decodable {
             return """
             /9j/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/yQALCAA\
             BAAEBAREA/8wABgAQEAX/2gAIAQEAAD8A0s8g/9k=
+            """
+        case .jxl:
+            return """
+            /wo6HwGRCAYBAKQBC4ALbNQxslZLlFdAkOAPoAehB5BJcYD1Lo0WYXbZB4vCxGjuQc6x/4UgLq5cjpgHPfUXsGDCgv45dgEZBArgt1YI\
+            436HAHKD5uNY+OGH8BV0jPMRJGl0oiUXUAHBDV4eWQQw6vhLEg4A
             """
         case .gif:
             return "R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
