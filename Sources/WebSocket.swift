@@ -88,10 +88,10 @@ func createWebSocketRoutes(for app: Application) throws {
     }
 
     app.webSocket("websocket", "ping", ":count") { request, socket in
-        var remainingPings = request.parameters["count", as: Int.self] ?? 1
-        socket.onPing { _ in
-            remainingPings -= 1
-            if remainingPings == 0 {
+        let remainingPings = Protected(request.parameters["count", as: Int.self] ?? 1)
+        socket.onPing { _, _ in
+            remainingPings.write { $0 -= 1 }
+            if remainingPings.read({ $0 == 0 }) {
                 _ = socket.close()
             }
         }

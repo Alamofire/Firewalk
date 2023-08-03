@@ -1,7 +1,7 @@
 # file options
 
 --symlinks ignore
---swiftversion 5.7
+--swiftversion 5.8
 
 # rules
 --enable isEmpty
@@ -24,6 +24,6 @@
 --nospaceoperators ..<, ...
 --selfrequired validate
 --stripunusedargs closure-only
---wraparguments after-first
---wrapcollections after-first
---wrapparameters after-first
+--wraparguments preserve
+--wrapcollections preserve
+--wrapparameters preserve
