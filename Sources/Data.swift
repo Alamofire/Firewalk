@@ -82,7 +82,7 @@ func createDataRoutes(for app: Application) throws {
 
         let response = Response(body: .init(stream: { writer in
             var bytesToSend = count
-            request.eventLoop.scheduleRepeatedTask(initialDelay: .seconds(0), delay: .milliseconds(1)) { task in
+            request.eventLoop.scheduleRepeatedTask(initialDelay: .seconds(0), delay: .milliseconds(20)) { task in
                 guard bytesToSend > 0 else { task.cancel(); _ = writer.write(.end); return }
 
                 _ = writer.write(.buffer(.init(integer: UInt8(bytesToSend))))
@@ -104,7 +104,7 @@ func createDataRoutes(for app: Application) throws {
         let encodedReply = try encoder.encodeAsByteBuffer(reply, allocator: app.allocator)
         let response = Response(body: .init(stream: { writer in
             var payloadsToSend = count
-            request.eventLoop.scheduleRepeatedTask(initialDelay: .seconds(0), delay: .milliseconds(1)) { task in
+            request.eventLoop.scheduleRepeatedTask(initialDelay: .seconds(0), delay: .milliseconds(20)) { task in
                 guard payloadsToSend > 0 else { task.cancel(); _ = writer.write(.end); return }
 
                 _ = writer.write(.buffer(encodedReply))
