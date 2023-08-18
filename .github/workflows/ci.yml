@@ -35,7 +35,7 @@ jobs:
     name: Linux
     runs-on: ubuntu-22.04
     container:
-      image: swiftlang/swift:nightly-5.8-jammy
+      image: swift:5.8.1-jammy
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v3
