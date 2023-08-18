@@ -7,18 +7,27 @@ All notable changes to this project will be documented in this file.
 
 - `0.x` Releases - [0.1.0](#010) | [0.2.0](#020) | [0.3.0](#030) | [0.4.0](#040) | [0.5.0](#050)
   [0.6.0](#060) | [0.6.1](#061) | [0.7.0](#070) | [0.8.0](#080) | [0.8.1](#081)
-  [0.8.2](#082) | [0.8.3](#083) | [0.9.0](#090) | [0.9.1](#091) | [0.10.0](#0100)
+  [0.8.2](#082) | [0.8.3](#083) | [0.9.0](#090) | [0.9.1](#091) | [0.10.0](#0100) | [0.10.1](#0101)
 
 ---
 
+## [0.10.1](https://github.com/Alamofire/Firewalk/releases/tag/0.10.1)
+
+Released on 2023-08-18.
+
+#### Updated
+
+- Chunk delay in streaming endpoints.
+  - Updated by [Jon Shier](https://github.com/jshier) in PR [#31](https://github.com/Alamofire/Firewalk/pull/31).
+
 ## [0.10.0](https://github.com/Alamofire/Firewalk/releases/tag/0.10.0)
 
-Released on 2023-09-03.
+Released on 2023-08-03.
 
 #### Added
 
 - Support for JPEG XL images.
-  - Added by [Jon Shier](https://github.com/jshier) in PR [#26](https://github.com/Alamofire/Firewalk/pull/29).
+  - Added by [Jon Shier](https://github.com/jshier) in PR [#29](https://github.com/Alamofire/Firewalk/pull/29).
 
 ---
 
