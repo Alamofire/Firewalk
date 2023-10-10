@@ -25,29 +25,29 @@ jobs:
     name: macOS
     runs-on: firebreak
     env:
-      DEVELOPER_DIR: /Applications/Xcode_14.3.1.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_15.0.app/Contents/Developer
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: SPM Test
         run: swift test -c debug --sanitize=thread
   Linux:
     name: Linux
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container:
-      image: swift:5.8.1-jammy
+      image: swift:5.9.0-jammy
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: SPM Linux Test
         run: swift test -c debug
   Linux_Nightly:
     name: Linux Nightly
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container:
       image: swiftlang/swift:nightly-jammy
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: SPM Linux Test
         run: swift test -c debug
