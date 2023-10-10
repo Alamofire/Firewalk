@@ -28,11 +28,11 @@ func createUploadRoutes(for app: Application) throws {
     app.on(.POST, "upload", body: .stream) { request -> EventLoopFuture<Response> in
         let promise = request.eventLoop.makePromise(of: Response.self)
 
-        var bytesReceived = 0
+        let bytesReceived = Protected(0)
         request.body.drain { result in
             switch result {
             case let .buffer(buffer):
-                bytesReceived += buffer.readableBytes
+                bytesReceived.write { $0 += buffer.readableBytes }
                 request.logger.info("Received \(bytesReceived) bytes so far.")
                 return request.eventLoop.makeSucceededVoidFuture()
             case let .error(error):
@@ -42,7 +42,7 @@ func createUploadRoutes(for app: Application) throws {
                 app.logger.info("Upload of \(bytesReceived) bytes completed.")
                 let response: Response
                 do {
-                    let uploadResponse = UploadResponse(bytes: bytesReceived)
+                    let uploadResponse = UploadResponse(bytes: bytesReceived.wrappedValue)
                     let buffer = try JSONEncoder().encodeAsByteBuffer(uploadResponse, allocator: request.application.allocator)
                     response = Response(status: .ok, body: .init(buffer: buffer))
                 } catch {
