@@ -47,63 +47,63 @@ private enum Image: String, Decodable {
     var contentType: HTTPMediaType {
         switch self {
         case .avif:
-            return HTTPMediaType(type: "image", subType: "avif")
+            HTTPMediaType(type: "image", subType: "avif")
         case .bmp:
-            return HTTPMediaType(type: "image", subType: "x-ms-bmp")
+            HTTPMediaType(type: "image", subType: "x-ms-bmp")
         case .jp2:
-            return HTTPMediaType(type: "image", subType: "jp2")
+            HTTPMediaType(type: "image", subType: "jp2")
         case .jpeg:
-            return .jpeg
+            .jpeg
         case .jxl:
-            return HTTPMediaType(type: "image", subType: "jxl")
+            HTTPMediaType(type: "image", subType: "jxl")
         case .gif:
-            return .gif
+            .gif
         case .heic:
-            return HTTPMediaType(type: "image", subType: "heic")
+            HTTPMediaType(type: "image", subType: "heic")
         case .heif:
-            return HTTPMediaType(type: "image", subType: "heif")
+            HTTPMediaType(type: "image", subType: "heif")
         case .pdf:
-            return .pdf
+            .pdf
         case .png:
-            return .png
+            .png
         case .tiff:
-            return HTTPMediaType(type: "image", subType: "tiff")
+            HTTPMediaType(type: "image", subType: "tiff")
         case .webp:
-            return HTTPMediaType(type: "image", subType: "webp")
+            HTTPMediaType(type: "image", subType: "webp")
         }
     }
 
     var encodedImage: String {
         switch self {
         case .avif:
-            return """
+            """
             AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF\
             2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdj\
             AxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xyb\
             mNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgANogQEAwgMg8f8D///8WfhwB8+ErK42A=
             """
         case .bmp:
-            return "Qk0eAAAAAAAAABoAAAAMAAAAAQABAAEAGAAAAP8A"
+            "Qk0eAAAAAAAAABoAAAAMAAAAAQABAAEAGAAAAP8A"
         case .jp2:
-            return """
+            """
             AAAADGpQICANCocKAAAAFGZ0eXBqcDIgAAAAAGpwMiAAAAAtanAyaAAAABZpaGRyAAAAAQAAAAEAAwcHAAAAAAAPY29scgEAAAAAABA\
             AAAAAanAyY/9P/1EALwAAAAAAAQAAAAEAAAAAAAAAAAAAAAEAAAABAAAAAAAAAAAAAwcBAQcBAQcBAf9cAA1AQEhIUEhIUEhIUP9SAA\
             wAAAABAQMEBAAB/2QADgABTFRfSlAyXzIyMP+QAAoAAAAAAB0AAf+T34AIB4CAgICAgICAgICA/9k=
             """
         case .jpeg:
-            return """
+            """
             /9j/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/yQALCAA\
             BAAEBAREA/8wABgAQEAX/2gAIAQEAAD8A0s8g/9k=
             """
         case .jxl:
-            return """
+            """
             /wo6HwGRCAYBAKQBC4ALbNQxslZLlFdAkOAPoAehB5BJcYD1Lo0WYXbZB4vCxGjuQc6x/4UgLq5cjpgHPfUXsGDCgv45dgEZBArgt1YI\
             436HAHKD5uNY+OGH8BV0jPMRJGl0oiUXUAHBDV4eWQQw6vhLEg4A
             """
         case .gif:
-            return "R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+            "R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
         case .heic:
-            return """
+            """
             AAAAGGZ0eXBoZWljAAAAAGhlaWNtaWYxAAABtW1ldGEAAAAAAAAAImhkbHIAAAAAAAAAAHBpY3QAAAAAAAAAAAAAAAAAAAAAACRkaW5\
             mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAAA5waXRtAAAAAAABAAAAOGlpbmYAAAAAAAIAAAAVaW5mZQIAAAAAAQAAaHZjMQ\
             AAAAAVaW5mZQIAAAEAAgAARXhpZgAAAAAaaXJlZgAAAAAAAAAOY2RzYwACAAEAAQAAANdpcHJwAAAAt2lwY28AAAATY29scm5jbHgAA\
@@ -114,7 +114,7 @@ private enum Image: String, Decodable {
             8K8K8K8K8K8K8K8+8h9YbnhyPHF8zZ/kV9X
             """
         case .heif:
-            return """
+            """
             AAAAGGZ0eXBoZWljAAAAAG1pZjFoZWljAAABKm1ldGEAAAAAAAAAIWhkbHIAAAAAAAAAAHBpY3QAXABjADEANQB4ADIAAAAADnBpdG0\
             AAAAAAAEAAAAiaWxvYwAAAABEQAABAAEAAAAAAUoAAQAAAAAAAAA4AAAAI2lpbmYAAAAAAAEAAAAVaW5mZQIAAAAAAQAAaHZjMQAAAA\
             CqaXBycAAAAI1pcGNvAAAAcWh2Y0MBBAgAAAAAAAAAAAD/8AD8/fj4AAAPAyAAAQAXQAEMAf//BAgAAAMAn6gAAAMAAP+6AkAhAAEAJ\
@@ -122,16 +122,16 @@ private enum Image: String, Decodable {
             AAAAAAAAAAEAAQKBAgAAAEBtZGF0AAAANCgBrwW4FIPqI0Af91/uf7X9b878787878989898989898989/4UETMJZQNe2nK06cUg1sA=
             """
         case .pdf:
-            return """
+            """
             JVBERi0xLgoxIDAgb2JqPDwvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqPDwvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjM\
             gMCBvYmo8PC9QYXJlbnQgMiAwIFI+PmVuZG9iagp0cmFpbGVyIDw8L1Jvb3QgMSAwIFI+Pg==
             """
         case .png:
-            return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=="
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=="
         case .tiff:
-            return "TU0AKgAAAAgAAwEAAAMAAAABAAEAAAEBAAMAAAABAAEAAAERAAMAAAABAAAAAA=="
+            "TU0AKgAAAAgAAwEAAAMAAAABAAEAAAEBAAMAAAABAAEAAAERAAMAAAABAAAAAA=="
         case .webp:
-            return "UklGRhYAAABXRUJQVlA4TAkAAAAvAAAAAIiI/gcA"
+            "UklGRhYAAABXRUJQVlA4TAkAAAAvAAAAAIiI/gcA"
         }
     }
 

@@ -1,5 +1,5 @@
 //
-//  Inspection.swift
+//  Protected.swift
 //
 //  Copyright (c) 2022 Alamofire Software Foundation (http://alamofire.org/)
 //

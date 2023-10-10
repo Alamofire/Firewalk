@@ -46,11 +46,11 @@ func createDownloadRoutes(for app: Application) throws {
             let byteCount = range.ranges.reduce(0) { result, value in
                 switch value {
                 case let .start(value):
-                    return result + (totalCount - value)
+                    result + (totalCount - value)
                 case let .tail(value):
-                    return result + value
+                    result + value
                 case let .within(start, end):
-                    return result + (end - start)
+                    result + (end - start)
                 }
             }
 

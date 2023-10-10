@@ -1,7 +1,7 @@
 # file options
 
 --symlinks ignore
---swiftversion 5.8
+--swiftversion 5.9
 
 # rules
 --enable isEmpty
@@ -10,7 +10,6 @@
 
 # format options
 
---closingparen same-line
 --commas inline
 --comments indent
 --decimalgrouping 3,5
