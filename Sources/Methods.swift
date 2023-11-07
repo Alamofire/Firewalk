@@ -55,9 +55,23 @@ func createMethodRoutes(for app: Application) throws {
             response.headers.replaceOrAdd(name: .location, value: redirectAddress)
             return response
         case 400..<600:
-            return Response(status: .init(statusCode: code))
+            let response = Response(status: .init(statusCode: code))
+            // NIO stops parsing HTTP when an upgrade is detected, so close the connection.
+            // Remove if NIO / Vapor fixes the issue.
+            if request.headers.contains(name: .upgrade) {
+                 response.headers.connection = .close
+            }
+            
+            return response
         default:
-            return Response(status: .badRequest)
+            let response = Response(status: .badRequest)
+            // NIO stops parsing HTTP when an upgrade is detected, so close the connection.
+            // Remove if NIO / Vapor fixes the issue.
+            if request.headers.contains(name: .upgrade) {
+                 response.headers.connection = .close
+            }
+            
+            return response
         }
     }
 
