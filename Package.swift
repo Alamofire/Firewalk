@@ -35,7 +35,7 @@ swiftSettings = []
 let package = Package(name: "Firewalk",
                       platforms: [.macOS(.v10_15)],
                       products: [.executable(name: "firewalk", targets: ["firewalk"])],
-                      dependencies: [.package(url: "https://github.com/vapor/vapor.git", from: "4.79.0")],
+                      dependencies: [.package(url: "https://github.com/vapor/vapor.git", from: "4.86.0")],
                       targets: [.executableTarget(name: "firewalk",
                                                   dependencies: [.product(name: "Vapor", package: "vapor")],
                                                   path: "Sources",
