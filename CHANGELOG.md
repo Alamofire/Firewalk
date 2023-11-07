@@ -8,9 +8,18 @@ All notable changes to this project will be documented in this file.
 - `0.x` Releases - [0.1.0](#010) | [0.2.0](#020) | [0.3.0](#030) | [0.4.0](#040) | [0.5.0](#050)
   [0.6.0](#060) | [0.6.1](#061) | [0.7.0](#070) | [0.8.0](#080) | [0.8.1](#081)
   [0.8.2](#082) | [0.8.3](#083) | [0.9.0](#090) | [0.9.1](#091) | [0.10.0](#0100) | [0.10.1](#0101)
-  [0.10.2](#0102)
+  [0.10.2](#0102) | [0.10.3](#01003)
 
 ---
+
+## [0.10.3](https://github.com/Alamofire/Firewalk/releases/tag/0.10.3)
+
+Released on 2023-11-07.
+
+#### Fixed
+
+- Stall when failing an HTTP upgrade.
+  - Fixed by [Jon Shier](https://github.com/jshier) in PR [#34](https://github.com/Alamofire/Firewalk/pull/34).
 
 ## [0.10.2](https://github.com/Alamofire/Firewalk/releases/tag/0.10.2)
 
