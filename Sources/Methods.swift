@@ -44,9 +44,15 @@ func createMethodRoutes(for app: Application) throws {
         case Int.min..<200:
             return Response(status: .badRequest)
         case 200..<300:
-            let reply = try Reply(to: request)
-            let encodedReply = try JSONEncoder().encodeAsByteBuffer(reply, allocator: app.allocator)
-            return Response(status: .init(statusCode: code), body: .init(buffer: encodedReply))
+            if code == 204 || code == 205 {
+                let response = Response(status: .init(statusCode: code))
+                response.headers.contentType = nil
+                return response
+            } else {
+                let reply = try Reply(to: request)
+                let encodedReply = try JSONEncoder().encodeAsByteBuffer(reply, allocator: app.allocator)
+                return Response(status: .init(statusCode: code), body: .init(buffer: encodedReply))
+            }
         case 300..<400:
             let response = Response(status: .init(statusCode: code))
             let address = app.http.server.configuration.address
@@ -59,18 +65,16 @@ func createMethodRoutes(for app: Application) throws {
             // NIO stops parsing HTTP when an upgrade is detected, so close the connection.
             // Remove if NIO / Vapor fixes the issue.
             if request.headers.contains(name: .upgrade) {
-                 response.headers.connection = .close
+                response.headers.connection = .close
             }
-            
             return response
         default:
             let response = Response(status: .badRequest)
             // NIO stops parsing HTTP when an upgrade is detected, so close the connection.
             // Remove if NIO / Vapor fixes the issue.
             if request.headers.contains(name: .upgrade) {
-                 response.headers.connection = .close
+                response.headers.connection = .close
             }
-            
             return response
         }
     }
