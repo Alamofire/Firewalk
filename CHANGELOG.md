@@ -12,6 +12,17 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.11.0](https://github.com/Alamofire/Firewalk/releases/tag/0.11.0)
+
+Released on 2024-09-28.
+
+#### Updated
+
+- Swift 6 compatibility and dependencies.
+  - Updated by [Jon Shier](https://github.com/jshier) in PR [#37](https://github.com/Alamofire/Firewalk/pull/37).
+
+---
+
 ## [0.10.4](https://github.com/Alamofire/Firewalk/releases/tag/0.10.4)
 
 Released on 2023-01-27.
