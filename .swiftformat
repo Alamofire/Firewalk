@@ -1,12 +1,7 @@
 # file options
 
 --symlinks ignore
---swiftversion 5.9
-
-# rules
---enable isEmpty
---disable andOperator
---disable wrapMultilineStatementBraces
+--swiftversion 6
 
 # format options
 
@@ -22,7 +17,15 @@
 --operatorfunc no-space
 --nospaceoperators ..<, ...
 --selfrequired validate
+--someAny false
 --stripunusedargs closure-only
 --wraparguments preserve
 --wrapcollections preserve
 --wrapparameters preserve
+
+# rules
+
+--enable isEmpty
+--disable andOperator
+--disable opaqueGenericParameters
+--disable wrapMultilineStatementBraces

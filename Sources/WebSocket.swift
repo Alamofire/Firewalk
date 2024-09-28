@@ -103,7 +103,7 @@ struct WebSocketOptions: Decodable {
     let closeDelay: Int64?
 }
 
-extension WebSocketErrorCode: Decodable {
+extension NIOWebSocket.WebSocketErrorCode: Swift.Decodable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
 
@@ -116,7 +116,7 @@ extension RoutesBuilder {
     @discardableResult
     public func webSocket(_ path: PathComponent...,
                           maxFrameSize: WebSocketMaxFrameSize = .default,
-                          onUpgrade: @escaping (Request, WebSocket) throws -> Void) -> Route {
+                          onUpgrade: @escaping @Sendable (Request, WebSocket) throws -> Void) -> Route {
         webSocket(path, maxFrameSize: maxFrameSize) { request -> EventLoopFuture<HTTPHeaders?> in
             let headers = request.headers[.secWebSocketProtocol].first.map { `protocol` -> HTTPHeaders in
                 var headers = HTTPHeaders()

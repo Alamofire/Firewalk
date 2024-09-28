@@ -81,12 +81,12 @@ func createDataRoutes(for app: Application) throws {
         }
 
         let response = Response(body: .init(stream: { writer in
-            var bytesToSend = count
+            let bytesToSend = Protected(count)
             request.eventLoop.scheduleRepeatedTask(initialDelay: .seconds(0), delay: .milliseconds(20)) { task in
-                guard bytesToSend > 0 else { task.cancel(); _ = writer.write(.end); return }
+                guard bytesToSend.value > 0 else { task.cancel(); _ = writer.write(.end); return }
 
-                _ = writer.write(.buffer(.init(integer: UInt8(bytesToSend))))
-                bytesToSend -= 1
+                _ = writer.write(.buffer(.init(integer: UInt8(bytesToSend.value))))
+                bytesToSend.write { $0 -= 1 }
             }
         }))
 
@@ -103,12 +103,12 @@ func createDataRoutes(for app: Application) throws {
         let reply = try Reply(to: request)
         let encodedReply = try encoder.encodeAsByteBuffer(reply, allocator: app.allocator)
         let response = Response(body: .init(stream: { writer in
-            var payloadsToSend = count
+            let payloadsToSend = Protected(count)
             request.eventLoop.scheduleRepeatedTask(initialDelay: .seconds(0), delay: .milliseconds(20)) { task in
-                guard payloadsToSend > 0 else { task.cancel(); _ = writer.write(.end); return }
+                guard payloadsToSend.value > 0 else { task.cancel(); _ = writer.write(.end); return }
 
                 _ = writer.write(.buffer(encodedReply))
-                payloadsToSend -= 1
+                payloadsToSend.write { $0 -= 1 }
             }
         }))
 
@@ -120,6 +120,7 @@ func createDataRoutes(for app: Application) throws {
         Response(body: .init(stream: { writer in
             let buffer = request.application.allocator.buffer(repeating: 1, count: 100_000_000)
 
+            @Sendable
             func writeBuffer() {
                 writer.write(.buffer(buffer)).whenComplete { result in
                     switch result {

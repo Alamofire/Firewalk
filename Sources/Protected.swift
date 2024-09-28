@@ -24,7 +24,7 @@
 
 import Foundation
 
-private protocol Lock {
+private protocol Lock: Sendable {
     func lock()
     func unlock()
 }
@@ -49,15 +49,10 @@ extension Lock {
     }
 }
 
-#if os(Linux) || os(Windows)
-
-extension NSLock: Lock {}
-
-#endif
-
-#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
+#if canImport(Darwin)
+// Number of Apple engineers who insisted on inspecting this: 5
 /// An `os_unfair_lock` wrapper.
-final class UnfairLock: Lock {
+final class UnfairLock: Lock, @unchecked Sendable {
     private let unfairLock: os_unfair_lock_t
 
     init() {
@@ -78,33 +73,35 @@ final class UnfairLock: Lock {
         os_unfair_lock_unlock(unfairLock)
     }
 }
+
+#elseif canImport(Foundation)
+extension NSLock: Lock {}
+#else
+#error("This platform needs a Lock-conforming type without Foundation.")
 #endif
 
 /// A thread-safe wrapper around a value.
-@propertyWrapper
 @dynamicMemberLookup
-final class Protected<T> {
-    #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
+final class Protected<Value> {
+    #if canImport(Darwin)
     private let lock = UnfairLock()
-    #elseif os(Linux) || os(Windows)
+    #elseif canImport(Foundation)
     private let lock = NSLock()
+    #else
+    #error("This platform needs a Lock-conforming type without Foundation.")
     #endif
-    private var value: T
+    #if compiler(>=6)
+    private nonisolated(unsafe) var _value: Value
+    #else
+    private var _value: Value
+    #endif
 
-    init(_ value: T) {
-        self.value = value
+    var value: Value {
+        read { $0 }
     }
 
-    /// The contained value. Unsafe for anything more than direct read or write.
-    var wrappedValue: T {
-        get { lock.around { value } }
-        set { lock.around { value = newValue } }
-    }
-
-    var projectedValue: Protected<T> { self }
-
-    init(wrappedValue: T) {
-        value = wrappedValue
+    init(_ value: Value) {
+        self._value = value
     }
 
     /// Synchronously read or transform the contained value.
@@ -112,8 +109,8 @@ final class Protected<T> {
     /// - Parameter closure: The closure to execute.
     ///
     /// - Returns:           The return value of the closure passed.
-    func read<U>(_ closure: (T) throws -> U) rethrows -> U {
-        try lock.around { try closure(self.value) }
+    func read<U>(_ closure: (Value) throws -> U) rethrows -> U {
+        try lock.around { try closure(_value) }
     }
 
     /// Synchronously modify the protected value.
@@ -122,16 +119,41 @@ final class Protected<T> {
     ///
     /// - Returns:           The modified value.
     @discardableResult
-    func write<U>(_ closure: (inout T) throws -> U) rethrows -> U {
-        try lock.around { try closure(&self.value) }
+    func write<U>(_ closure: (inout Value) throws -> U) rethrows -> U {
+        try lock.around { try closure(&_value) }
     }
 
-    subscript<Property>(dynamicMember keyPath: WritableKeyPath<T, Property>) -> Property {
-        get { lock.around { value[keyPath: keyPath] } }
-        set { lock.around { value[keyPath: keyPath] = newValue } }
+    /// Synchronously update the protected value.
+    ///
+    /// - Parameter value: The `Value`.
+    func write(_ value: Value) {
+        write { $0 = value }
     }
 
-    subscript<Property>(dynamicMember keyPath: KeyPath<T, Property>) -> Property {
+    subscript<Property>(dynamicMember keyPath: WritableKeyPath<Value, Property>) -> Property {
+        get { lock.around { _value[keyPath: keyPath] } }
+        set { lock.around { _value[keyPath: keyPath] = newValue } }
+    }
+
+    subscript<Property>(dynamicMember keyPath: KeyPath<Value, Property>) -> Property {
         lock.around { value[keyPath: keyPath] }
+    }
+}
+
+#if compiler(>=6)
+extension Protected: Sendable {}
+#else
+extension Protected: @unchecked Sendable {}
+#endif
+
+extension Protected: Equatable where Value: Equatable {
+    static func ==(lhs: Protected<Value>, rhs: Protected<Value>) -> Bool {
+        lhs.read { left in rhs.read { right in left == right }}
+    }
+}
+
+extension Protected: Hashable where Value: Hashable {
+    func hash(into hasher: inout Hasher) {
+        read { hasher.combine($0) }
     }
 }

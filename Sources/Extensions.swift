@@ -24,7 +24,7 @@
 
 import Vapor
 
-extension Request: Authenticatable {}
+extension Vapor.Request: Vapor.Authenticatable {}
 
 extension Request {
     var isAuthenticated: Bool {
@@ -37,14 +37,14 @@ extension Application {
     func on(_ methods: [HTTPMethod],
             _ path: PathComponent...,
             body: HTTPBodyStreamStrategy = .collect,
-            use closure: @escaping (Request) throws -> some ResponseEncodable) -> [Route] {
+            use closure: @escaping @Sendable (Request) throws -> some ResponseEncodable) -> [Route] {
         methods.map { on($0, path, body: body, use: closure) }
     }
 
     @discardableResult
     func onMethods(_ methods: [HTTPMethod],
                    body: HTTPBodyStreamStrategy = .collect,
-                   use closure: @escaping (Request) throws -> some ResponseEncodable) -> [Route] {
+                   use closure: @escaping @Sendable (Request) throws -> some ResponseEncodable) -> [Route] {
         methods.map { on($0, .constant($0.rawValue.lowercased()), body: body, use: closure) }
     }
 }
@@ -54,7 +54,7 @@ extension RoutesBuilder {
     func on(_ methods: [HTTPMethod],
             _ path: PathComponent...,
             body: HTTPBodyStreamStrategy = .collect,
-            use closure: @escaping (Request) throws -> some ResponseEncodable) -> [Route] {
+            use closure: @escaping @Sendable (Request) throws -> some ResponseEncodable) -> [Route] {
         methods.map { on($0, path, body: body, use: closure) }
     }
 }

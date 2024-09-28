@@ -42,7 +42,7 @@ func createUploadRoutes(for app: Application) throws {
                 app.logger.info("Upload of \(bytesReceived) bytes completed.")
                 let response: Response
                 do {
-                    let uploadResponse = UploadResponse(bytes: bytesReceived.wrappedValue)
+                    let uploadResponse = UploadResponse(bytes: bytesReceived.read { $0 })
                     let buffer = try JSONEncoder().encodeAsByteBuffer(uploadResponse, allocator: request.application.allocator)
                     response = Response(status: .ok, body: .init(buffer: buffer))
                 } catch {
