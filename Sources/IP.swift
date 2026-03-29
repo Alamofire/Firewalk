@@ -26,6 +26,6 @@ import Vapor
 
 func createIPRoute(for app: Application) throws {
     app.on(.GET, "ip") { request in
-        IPReply(origin: request.remoteAddress?.description ?? "No IP Address`.")
+        IPReply(origin: request.remoteAddress?.description ?? "No IP Address.")
     }
 }
