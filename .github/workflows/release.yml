@@ -23,19 +23,15 @@ jobs:
         run: echo "::set-output name=upload_url::https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$(jq --raw-output '.release.id' $GITHUB_EVENT_PATH)/assets{?name,label}"
         id: release
       - name: "Upload Assets"
-        uses: "actions/upload-release-asset@v1"
-        env:
-          GITHUB_TOKEN: ${{ secrets.FIREWALK_RELEASE }}
+        uses: "softprops/action-gh-release@v2"
+        if: github.ref_type == 'tag'
         with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./firewalk.zip
-          asset_name: firewalk.zip
-          asset_content_type: application/zip
+          files: firewalk.zip
         id: upload
       - name: "Bump Tap"
-        uses: mislav/bump-homebrew-formula-action@v1
+        uses: mislav/bump-homebrew-formula-action@v4
         env:
-          COMMITTER_TOKEN: ${{ secrets.FIREWALK_RELEASE }}
+          COMMITTER_TOKEN: ${{ secrets.FIREWALK_DEPLOY }}
         if: "!contains(github.ref, '-')" # skip prereleases
         with:
           formula-name: firewalk
