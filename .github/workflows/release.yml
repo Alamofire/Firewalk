@@ -37,5 +37,5 @@ jobs:
           formula-name: firewalk
           homebrew-tap: Alamofire/homebrew-alamofire
           base-branch: master
-          download-url: ${{ steps.upload.outputs.browser_download_url }}
+          download-url: ${{ fromJSON(steps.upload.outputs.assets)[0].browser_download_url }}
           commit-message: Firewalk Release
