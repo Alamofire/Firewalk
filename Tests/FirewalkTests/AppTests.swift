@@ -1,7 +1,7 @@
 //
 //  AppTests.swift
 //
-//  Copyright (c) 2020 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2026 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -23,291 +23,217 @@
 //
 
 @testable import firewalk
-import XCTVapor
+import Testing
+import VaporTesting
 
-final class AppTests: XCTestCase {
-    func testGet() throws {
+struct AppTests {
+    @Test
+    func get() async throws {
         // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        var response: XCTHTTPResponse?
-        var value: Reply?
-
-        // When
-        try app.test(.GET, "get", into: &response, decoding: &value)
-
-        // Then
-        XCTAssertEqual(response?.status, .ok)
-        XCTAssertEqual(value?.url, "http://127.0.0.1:8080/get")
-    }
-
-    func testPost() throws {
-        // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        var response: XCTHTTPResponse?
-        var value: Reply?
-
-        // When
-        try app.test(.POST, "post", into: &response, decoding: &value)
-
-        // Then
-        XCTAssertEqual(response?.status, .ok)
-        XCTAssertEqual(value?.url, "http://127.0.0.1:8080/post")
-    }
-
-    func testGetWithQueryParameters() throws {
-        // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        var response: XCTHTTPResponse?
-        var value: Reply?
-
-        // When
-        try app.test(.GET, "get?one=one&two=two", into: &response, decoding: &value)
-
-        // Then
-        XCTAssertEqual(response?.status, .ok)
-        XCTAssertEqual(value?.url, "http://127.0.0.1:8080/get?one=one&two=two")
-        XCTAssertEqual(value?.args, ["one": "one", "two": "two"])
-    }
-
-    func testPostWithBodyForm() throws {
-        // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        var response: XCTHTTPResponse?
-        var value: Reply?
-
-        // When
-        try app.test(.GET, "get?one=one&two=two", into: &response, decoding: &value)
-
-        // Then
-        XCTAssertEqual(response?.status, .ok)
-        XCTAssertEqual(value?.url, "http://127.0.0.1:8080/get?one=one&two=two")
-        XCTAssertEqual(value?.args, ["one": "one", "two": "two"])
-    }
-
-    func testAllMethodQueries() throws {
-        // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        var response: XCTHTTPResponse?
-        var value: Reply?
-
-        // When
-        let methods: [HTTPMethod] = [.GET, .POST, .DELETE, .PATCH, .PUT]
-        for method in methods {
-            try app.test(method, "/\(method.rawValue.lowercased())", into: &response, decoding: &value)
-
-            // Then
-            XCTAssertEqual(response?.status, .ok)
-            XCTAssertEqual(value?.url, "http://127.0.0.1:8080/\(method.rawValue.lowercased())")
+        try await withApp(configure: configure) { app in
+            // When
+            try await app.testing().test(.GET, "get") { response in
+                // Then
+                #expect(response.status == .ok)
+                try #expect(response.reply().url == "http://127.0.0.1:8080/get")
+            }
         }
     }
 
-    func testPostWithFormBody() throws {
+    @Test
+    func post() async throws {
         // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        var response: XCTHTTPResponse?
-        var reply: Reply?
-
-        var headers = HTTPHeaders()
-        var body = app.allocator.buffer(capacity: 100)
-        try URLEncodedFormEncoder().encode(["one": "one"], to: &body, headers: &headers)
-
-        // When
-        try app.test(.POST, "post", headers: headers, body: body, into: &response, decoding: &reply)
-
-        // Then
-        XCTAssertEqual(response?.status, .ok)
-        XCTAssertEqual(reply?.form, ["one": "one"])
+        try await withApp(configure: configure) { app in
+            // When
+            try await app.testing().test(.POST, "post") { response in
+                // Then
+                #expect(response.status == .ok)
+                try #expect(response.reply().url == "http://127.0.0.1:8080/post")
+            }
+        }
     }
 
-    func testStatusCode() throws {
+    @Test
+    func `get with query parameters`() async throws {
         // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        var response: XCTHTTPResponse?
-
-        // When
-        try app.test(.GET, "status/401", into: &response)
-
-        // Then
-        XCTAssertEqual(response?.status, .unauthorized)
+        try await withApp(configure: configure) { app in
+            // When
+            try await app.testing().test(.GET, "get?one=one&two=two") { response in
+                // Then
+                #expect(response.status == .ok)
+                let reply = try response.reply()
+                #expect(reply.url == "http://127.0.0.1:8080/get?one=one&two=two")
+                #expect(reply.args == ["one": "one", "two": "two"])
+            }
+        }
     }
 
-    func testThatInvalidStatusCodeReturns400() throws {
+    @Test
+    func `all method queries`() async throws {
         // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        var response: XCTHTTPResponse?
-
-        // When
-        try app.test(.GET, "status/blah", into: &response)
-
-        // Then
-        XCTAssertEqual(response?.status, .badRequest)
+        try await withApp(configure: configure) { app in
+            // When
+            let methods: [HTTPMethod] = [.GET, .POST, .DELETE, .PATCH, .PUT]
+            for method in methods {
+                try await app.testing().test(method, "\(method.rawValue.lowercased())") { response in
+                    // Then
+                    #expect(response.status == .ok)
+                    try #expect(response.reply().url == "http://127.0.0.1:8080/\(method.rawValue.lowercased())")
+                }
+            }
+        }
     }
 
-    func testThatBytesReturnsAppropriateLength() throws {
+    @Test
+    func `post with form body`() async throws {
         // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        let expectedSize = 10
-        var response: XCTHTTPResponse?
-
-        // When
-        try app.test(.GET, "bytes/\(expectedSize)", into: &response)
-
-        // Then
-        XCTAssertEqual(response?.status, .ok)
-        XCTAssertEqual(response?.body.readableBytes, expectedSize)
+        try await withApp(configure: configure) { app in
+            // When
+            var headers = HTTPHeaders()
+            var body = app.allocator.buffer(capacity: 100)
+            try URLEncodedFormEncoder().encode(["one": "one"], to: &body, headers: &headers)
+            try await app.testing().test(.POST, "post", headers: headers, body: body) { response in
+                // Then
+                #expect(response.status == .ok)
+                let reply = try response.reply()
+                #expect(reply.url == "http://127.0.0.1:8080/post")
+                #expect(reply.form == ["one": "one"])
+            }
+        }
     }
 
-    func testThatInvalidBytesReturns400() throws {
+    @Test
+    func `status code`() async throws {
         // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        var response: XCTHTTPResponse?
-
-        // When
-        try app.test(.GET, "bytes/blah", into: &response)
-
-        // Then
-        XCTAssertEqual(response?.status, .badRequest)
+        try await withApp(configure: configure) { app in
+            // When
+            try await app.testing().test(.GET, "status/401") { response in
+                // Then
+                #expect(response.status == .unauthorized)
+            }
+        }
     }
 
-    func testThatXMLReturnsXML() throws {
+    @Test
+    func `that invalid status code returns400`() async throws {
         // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        var response: XCTHTTPResponse?
-
-        // When
-        try app.test(.GET, "xml", into: &response)
-
-        // Then
-        XCTAssertEqual(response?.status, .ok)
-        XCTAssertEqual(response?.body.getString(at: 0, length: 5), "<?xml")
+        // Given
+        try await withApp(configure: configure) { app in
+            // When
+            try await app.testing().test(.GET, "status/blah") { response in
+                // Then
+                #expect(response.status == .badRequest)
+            }
+        }
     }
 
-    func testThatIPReturnsOrigin() throws {
+    @Test
+    func `that bytes returns appropriate length`() async throws {
         // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        var response: XCTHTTPResponse?
-        var ipReply: IPReply?
-
-        // When
-        try app.test(.GET, "ip", into: &response, decoding: &ipReply)
-
-        // Then
-        XCTAssertEqual(response?.status, .ok)
+        try await withApp(configure: configure) { app in
+            // When
+            let expectedSize = 10
+            try await app.testing().test(.GET, "bytes/\(expectedSize)") { response in
+                // Then
+                #expect(response.status == .ok)
+                #expect(response.body.readableBytes == expectedSize)
+            }
+        }
     }
 
-    func testThatBasicAuthWorkWithProperCredentials() throws {
+    @Test
+    func `that invalid bytes returns400`() async throws {
         // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        let username = "user"
-        let password = "pass"
-        var headers = HTTPHeaders()
-        headers.basicAuthorization = BasicAuthorization(username: username, password: password)
-        var response: XCTHTTPResponse?
-        var reply: Reply?
-
-        // When
-        try app.test(.GET, "basic-auth/\(username)/\(password)", headers: headers, into: &response, decoding: &reply)
-
-        // Then
-        XCTAssertEqual(response?.status, .ok)
-        XCTAssertNotNil(reply)
+        try await withApp(configure: configure) { app in
+            // When
+            try await app.testing().test(.GET, "bytes/blah") { response in
+                // Then
+                #expect(response.status == .badRequest)
+            }
+        }
     }
 
-    func testThatBasicAuthFailsWithImproperCredentials() throws {
+    @Test
+    func `that XML returns XML`() async throws {
         // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        var response: XCTHTTPResponse?
-
-        // When
-        try app.test(.GET, "basic-auth/user/pass", into: &response)
-
-        // Then
-        XCTAssertEqual(response?.status, .unauthorized)
+        try await withApp(configure: configure) { app in
+            // When
+            try await app.testing().test(.GET, "xml") { response in
+                // Then
+                #expect(response.status == .ok)
+                #expect(response.body.getString(at: 0, length: 5) == "<?xml")
+            }
+        }
     }
 
-    func testThatRedirectToWorks() throws {
+    @Test
+    func `that IP returns origin`() async throws {
         // Given
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
+        try await withApp(configure: configure) { app in
+            // When
+            try await app.testing().test(.GET, "ip") { response in
+                // Then
+                #expect(response.status == .ok)
+                try #expect(response.decodeBody(as: IPReply.self).origin == "No IP Address.")
+            }
+        }
+    }
 
-        var response: XCTHTTPResponse?
+    @Test
+    func `that basic auth work with proper credentials`() async throws {
+        // Given
+        try await withApp(configure: configure) { app in
+            // When
+            let username = "user"
+            let password = "pass"
+            var headers = HTTPHeaders()
+            headers.basicAuthorization = BasicAuthorization(username: username, password: password)
+            try await app.testing().test(.GET, "basic-auth/\(username)/\(password)", headers: headers) { response in
+                // Then
+                #expect(response.status == .ok)
+                try #expect(response.reply().url == "http://127.0.0.1:8080/basic-auth/\(username)/\(password)")
+            }
+        }
+    }
 
-        // When
-        try app.test(.GET, "redirect-to?url=URL", into: &response)
+    @Test
+    func `that basic auth fails with improper credentials`() async throws {
+        // Given
+        try await withApp(configure: configure) { app in
+            // When
+            try await app.testing().test(.GET, "basic-auth/user/pass") { response in
+                // Then
+                #expect(response.status == .unauthorized)
+            }
+        }
+    }
 
-        // Then
-        XCTAssertEqual(response?.status, .found)
-        XCTAssertEqual(response?.headers.first(name: .location), "URL")
+    @Test
+    func `that redirect to works`() async throws {
+        // Given
+        try await withApp(configure: configure) { app in
+            // When
+            try await app.testing().test(.GET, "redirect-to?url=URL") { response in
+                // Then
+                #expect(response.status == .found)
+                #expect(response.headers.first(name: .location) == "URL")
+            }
+        }
     }
 }
 
-extension XCTApplicationTester {
-    @discardableResult
-    func test(_ method: HTTPMethod,
-              _ path: String,
-              headers: HTTPHeaders = [:],
-              body: ByteBuffer? = nil,
-              file _: StaticString = #file,
-              line _: UInt = #line,
-              into response: inout XCTHTTPResponse?) throws -> XCTApplicationTester {
-        try test(method, path, headers: headers, body: body) { response = $0 }
+extension TestingHTTPResponse {
+    struct MissingBody: Error {}
+
+    func decodeBody<Body: Decodable>(as type: Body.Type = Body.self) throws -> Body {
+        guard let data = body.getData(at: body.readerIndex, length: body.readableBytes, byteTransferStrategy: .noCopy) else {
+            throw MissingBody()
+        }
+
+        return try JSONDecoder().decode(Body.self, from: data)
     }
 
-    @discardableResult
-    func test<T: Decodable>(_ method: HTTPMethod,
-                            _ path: String,
-                            headers: HTTPHeaders = [:],
-                            body: ByteBuffer? = nil,
-                            file _: StaticString = #file,
-                            line _: UInt = #line,
-                            into response: inout XCTHTTPResponse?,
-                            decoding value: inout T?) throws -> XCTApplicationTester {
-        try test(method, path, headers: headers, body: body) {
-            response = $0
-            value = try $0.body.getJSONDecodable(T.self, at: $0.body.readerIndex, length: $0.body.readableBytes)
-        }
+    func reply() throws -> Reply {
+        try decodeBody(as: Reply.self)
     }
 }

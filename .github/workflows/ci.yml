@@ -23,22 +23,22 @@ concurrency:
 jobs:
   macOS:
     name: macOS
-    runs-on: firebreak
+    runs-on: self-xcode264
     env:
-      DEVELOPER_DIR: /Applications/Xcode_16.0.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.4.app/Contents/Developer
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: SPM Test
-        run: swift test -c debug --sanitize=thread
+        run: set -o pipefail && swift test --sanitize=thread -c debug 2>&1
   Linux:
     name: Linux
     runs-on: ubuntu-latest
     container:
-      image: swift:6.0-jammy
+      image: swift:6.3-jammy
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: SPM Linux Test
         run: swift test -c debug
   Linux_Nightly:
@@ -48,6 +48,6 @@ jobs:
       image: swiftlang/swift:nightly-jammy
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: SPM Linux Test
         run: swift test -c debug
