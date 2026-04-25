@@ -81,13 +81,14 @@ func createDataRoutes(for app: Application) throws {
         }
 
         let response = Response(body: .init(stream: { writer in
-            let bytesToSend = Protected(count)
-            request.eventLoop.scheduleRepeatedTask(initialDelay: .seconds(0), delay: .milliseconds(20)) { task in
-                guard bytesToSend.value > 0 else { task.cancel(); _ = writer.write(.end); return }
-
-                _ = writer.write(.buffer(.init(integer: UInt8(bytesToSend.value))))
-                bytesToSend.write { $0 -= 1 }
+            @Sendable
+            func sendByte(_ remaining: Int) {
+                guard remaining > 0 else { _ = writer.write(.end); return }
+                writer.write(.buffer(.init(integer: UInt8(remaining)))).whenComplete { _ in
+                    request.eventLoop.scheduleTask(in: .milliseconds(20)) { sendByte(remaining - 1) }
+                }
             }
+            sendByte(count)
         }))
 
         response.headers.replaceOrAdd(name: .contentType, value: "application/octet-stream")
@@ -103,13 +104,14 @@ func createDataRoutes(for app: Application) throws {
         let reply = try Reply(to: request)
         let encodedReply = try encoder.encodeAsByteBuffer(reply, allocator: app.allocator)
         let response = Response(body: .init(stream: { writer in
-            let payloadsToSend = Protected(count)
-            request.eventLoop.scheduleRepeatedTask(initialDelay: .seconds(0), delay: .milliseconds(20)) { task in
-                guard payloadsToSend.value > 0 else { task.cancel(); _ = writer.write(.end); return }
-
-                _ = writer.write(.buffer(encodedReply))
-                payloadsToSend.write { $0 -= 1 }
+            @Sendable
+            func sendPayload(_ payloadsToSend: Int) {
+                guard payloadsToSend > 0 else { _ = writer.write(.end); return }
+                writer.write(.buffer(encodedReply)).whenComplete { _ in
+                    request.eventLoop.scheduleTask(in: .milliseconds(20)) { sendPayload(payloadsToSend - 1) }
+                }
             }
+            sendPayload(count)
         }))
 
         response.headers.replaceOrAdd(name: .contentType, value: "application/octet-stream")
