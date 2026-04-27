@@ -75,17 +75,18 @@ func createDataRoutes(for app: Application) throws {
         return Response(body: .init(buffer: buffer))
     }
 
-    app.on(.GET, "chunked", ":count") { request -> Response in
+    app.on(.GET, "chunked", ":count", ":delay") { request -> Response in
         guard let count = request.parameters["count", as: Int.self], count > 0, count <= 100 else {
             return Response(status: .badRequest)
         }
 
+        let delay = request.parameters["delay", as: Int64.self] ?? 20
         let response = Response(body: .init(stream: { writer in
             @Sendable
             func sendByte(_ remaining: Int) {
                 guard remaining > 0 else { _ = writer.write(.end); return }
                 writer.write(.buffer(.init(integer: UInt8(remaining)))).whenComplete { _ in
-                    request.eventLoop.scheduleTask(in: .milliseconds(20)) { sendByte(remaining - 1) }
+                    request.eventLoop.scheduleTask(in: .milliseconds(delay)) { sendByte(remaining - 1) }
                 }
             }
             sendByte(count)
@@ -95,11 +96,12 @@ func createDataRoutes(for app: Application) throws {
         return response
     }
 
-    app.on(.GET, "payloads", ":count") { request -> Response in
+    app.on(.GET, "payloads", ":count", ":delay") { request -> Response in
         guard let count = request.parameters["count", as: Int.self], count > 0, count <= 100 else {
             return Response(status: .badRequest)
         }
 
+        let delay = request.parameters["delay", as: Int64.self] ?? 20
         let encoder = JSONEncoder()
         let reply = try Reply(to: request)
         let encodedReply = try encoder.encodeAsByteBuffer(reply, allocator: app.allocator)
@@ -108,7 +110,7 @@ func createDataRoutes(for app: Application) throws {
             func sendPayload(_ payloadsToSend: Int) {
                 guard payloadsToSend > 0 else { _ = writer.write(.end); return }
                 writer.write(.buffer(encodedReply)).whenComplete { _ in
-                    request.eventLoop.scheduleTask(in: .milliseconds(20)) { sendPayload(payloadsToSend - 1) }
+                    request.eventLoop.scheduleTask(in: .milliseconds(delay)) { sendPayload(payloadsToSend - 1) }
                 }
             }
             sendPayload(count)
