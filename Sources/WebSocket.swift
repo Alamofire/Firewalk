@@ -24,8 +24,8 @@
 
 #if canImport(Darwin)
 import Darwin
-#elseif canImport(GlibC)
-import GlibC
+#elseif canImport(Glibc)
+import Glibc
 #else
 #error("Unsupported platform needs a sleep() equivalent.")
 #endif
