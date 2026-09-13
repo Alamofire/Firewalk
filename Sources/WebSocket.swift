@@ -22,12 +22,19 @@
 //  THE SOFTWARE.
 //
 
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#else
+#error("Unsupported platform needs a sleep() equivalent.")
+#endif
 import NIO
 import NIOWebSocket
 import Vapor
 
 func createWebSocketRoutes(for app: Application) throws {
-    let defaultCloseDelay: TimeAmount = .milliseconds(30)
+    let defaultCloseDelay: TimeAmount = .milliseconds(0)
 
     app.webSocket("websocket") { request, socket in
         let options = try? request.query.decode(WebSocketOptions.self)
@@ -50,23 +57,31 @@ func createWebSocketRoutes(for app: Application) throws {
         let options = try? request.query.decode(WebSocketOptions.self)
         let closeCode = options?.closeCode ?? .normalClosure
         let closeDelay = options?.closeDelay.map(TimeAmount.milliseconds) ?? defaultCloseDelay
+        let messageDelay = options?.messageDelay.map(TimeAmount.milliseconds) ?? .zero
         let count = request.parameters["count", as: Int.self] ?? 1
         do {
             let payload = try Reply(to: request)
             let payloadBuffer = try JSONEncoder().encodeAsByteBuffer(payload, allocator: app.allocator)
 
-            let first = request.eventLoop.makeSucceededVoidFuture()
-            let futures = (0..<count).map { _ -> EventLoopFuture<Void> in
+            // Send messages sequentially, inserting messageDelay between each one.
+            @Sendable
+            func sendNext(_ remaining: Int) -> EventLoopFuture<Void> {
+                guard remaining > 0 else {
+                    return request.eventLoop.makeSucceededVoidFuture()
+                }
                 let promise = request.eventLoop.makePromise(of: Void.self)
                 socket.send(payloadBuffer, promise: promise)
-                return promise.futureResult
+                return promise.futureResult.flatMap {
+                    // No delay after the final message; close delay is applied separately.
+                    guard remaining > 1, messageDelay != .zero else {
+                        return sendNext(remaining - 1)
+                    }
+                    return request.eventLoop.scheduleTask(in: messageDelay) {}.futureResult
+                        .flatMap { sendNext(remaining - 1) }
+                }
             }
 
-            let afterAll = first.fold(futures) { _, _ in
-                request.eventLoop.makeSucceededVoidFuture()
-            }
-
-            _ = afterAll.always { _ in
+            _ = sendNext(count).always { _ in
                 request.eventLoop.scheduleTask(in: closeDelay) {
                     _ = socket.close(code: closeCode)
                 }
@@ -99,8 +114,14 @@ func createWebSocketRoutes(for app: Application) throws {
 }
 
 struct WebSocketOptions: Decodable {
+    /// Code to return when closing.
     let closeCode: WebSocketErrorCode?
+    /// Time to wait before closing the connection, in milliseconds.
     let closeDelay: Int64?
+    /// Time to wait between sequential messages.
+    let messageDelay: Int64?
+    /// Time to wait before accepting the connection.
+    let openDelay: Int64?
 }
 
 extension NIOWebSocket.WebSocketErrorCode: Swift.Decodable {
@@ -118,13 +139,20 @@ extension RoutesBuilder {
                           maxFrameSize: WebSocketMaxFrameSize = .default,
                           onUpgrade: @escaping @Sendable (Request, WebSocket) throws -> Void) -> Route {
         webSocket(path, maxFrameSize: maxFrameSize) { request -> EventLoopFuture<HTTPHeaders?> in
-            let headers = request.headers[.secWebSocketProtocol].first.map { `protocol` -> HTTPHeaders in
+            let headers = request.headers[.secWebSocketProtocol].first?.components(separatedBy: ", ").first.map { `protocol` -> HTTPHeaders in
                 var headers = HTTPHeaders()
-                headers.add(name: .secWebSocketProtocol, value: `protocol`)
+                headers.add(name: .secWebSocketProtocol, value: String(`protocol`))
                 return headers
             }
 
-            return request.eventLoop.makeSucceededFuture(headers ?? [:])
+            // If openDelay is requested, schedule the completion of the upgrade future on the event loop after the given delay.
+            return if let options = try? request.query.decode(WebSocketOptions.self), let openDelay = options.openDelay {
+                request.eventLoop.scheduleTask(in: .milliseconds(openDelay)) {
+                    headers ?? [:]
+                }.futureResult
+            } else {
+                request.eventLoop.makeSucceededFuture(headers ?? [:])
+            }
         } onUpgrade: { request, socket in
             do {
                 try onUpgrade(request, socket)
