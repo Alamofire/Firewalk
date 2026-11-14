@@ -47,7 +47,7 @@ struct DelayTests {
 
             // Then
             await clock.expectSleep(for: .seconds(2)) { !responded.value }
-            try await request.value
+            _ = try await request.value
             #expect(responded.value)
         }
     }
@@ -83,7 +83,7 @@ struct DelayTests {
             for _ in 0..<3 {
                 await clock.expectSleep(for: .milliseconds(10)) { !responded.value }
             }
-            try await request.value
+            _ = try await request.value
             #expect(responded.value)
         }
     }
@@ -108,7 +108,7 @@ struct DelayTests {
             for _ in 0..<2 {
                 await clock.expectSleep(for: .milliseconds(5)) { !responded.value }
             }
-            try await request.value
+            _ = try await request.value
             #expect(responded.value)
         }
     }
@@ -134,7 +134,7 @@ struct DelayTests {
             for _ in 0..<10 {
                 await clock.expectSleep(for: .milliseconds(1)) { !responded.value }
             }
-            try await request.value
+            _ = try await request.value
             #expect(responded.value)
         }
     }
@@ -151,7 +151,7 @@ struct DelayTests {
 
             // Then
             for (received, delay) in zip(1...3, [5, 5, 7]) {
-                await messages.next()
+                _ = await messages.next()
                 await clock.expectSleep(for: .milliseconds(delay)) {
                     client.messageCount.value == received && !client.socket.isClosed
                 }
