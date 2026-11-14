@@ -22,9 +22,12 @@
 //  THE SOFTWARE.
 //
 
+import Dependencies
 import Vapor
 
 func createDownloadRoutes(for app: Application) throws {
+    @Dependency(\.continuousClock) var clock
+
     app.on(.GET, "download", ":count") { request -> Response in
         guard let totalCount = request.parameters["count", as: Int.self],
               totalCount <= 10_000_000,
@@ -40,9 +43,34 @@ func createDownloadRoutes(for app: Application) throws {
         formatter.dateFormat = "EEE, dd MMM yyyy hh:mm:ss zzz"
         let lastModified = formatter.string(from: Date(timeIntervalSinceReferenceDate: 0))
 
+        let includeETag = (try? request.query.get(Bool.self, at: "etag")) ?? false
+        let omitLastModified = (try? request.query.get(Bool.self, at: "noLastModified")) ?? false
+        let omitAcceptRanges = (try? request.query.get(Bool.self, at: "noAcceptRanges")) ?? false
+
+        request.logger.info("download \(totalCount) Range=\(request.headers.first(name: .range) ?? "nil") If-Range=\(request.headers.first(name: .ifRange) ?? "nil") If-Match=\(request.headers.first(name: .ifMatch) ?? "nil")")
+
         let response: Response
 
-        if let range = request.headers.range {
+        // RFC 9110: a range whose last position precedes its first is invalid, so the header is ignored.
+        let validRange = request.headers.range.flatMap { range in
+            range.ranges.allSatisfy { value in
+                if case let .within(start, end) = value { return start <= end }
+                return true
+            } ? range : nil
+        }
+
+        if let range = validRange {
+            let startOffset: Int? = range.ranges.first.flatMap {
+                if case let .start(value) = $0 { return value }
+                if case let .within(start, _) = $0 { return start }
+                return nil
+            }
+            if let startOffset, startOffset >= totalCount {
+                let rejected = Response(status: .rangeNotSatisfiable)
+                rejected.headers.replaceOrAdd(name: .contentRange, value: "bytes */\(totalCount)")
+                return rejected
+            }
+
             let byteCount = range.ranges.reduce(0) { result, value in
                 switch value {
                 case let .start(value):
@@ -58,36 +86,33 @@ func createDownloadRoutes(for app: Application) throws {
             response = Response(status: .partialContent, body: .init(buffer: buffer))
             response.headers.contentRange = .init(unit: .bytes, range: .within(start: totalCount - byteCount, end: totalCount))
         } else {
-            response = Response(body: .init(stream: { writer in
-                let buffer = Protected(request.application.allocator.buffer(repeating: UInt8.random(), count: totalCount))
-                let bytesToSend = Protected(totalCount)
+            response = Response(body: .init(managedAsyncStream: { writer in
+                var buffer = request.application.allocator.buffer(repeating: UInt8.random(), count: totalCount)
+                var bytesToSend = totalCount
                 let segment = (totalCount / 10)
-                request.eventLoop.scheduleRepeatedTask(initialDelay: .seconds(0), delay: .milliseconds(1)) { task in
-                    guard bytesToSend.value > 0 else { task.cancel(); _ = writer.write(.end); return }
-
-                    if shouldProduceError, bytesToSend.value < (totalCount / 2) {
-                        task.cancel()
-                        _ = writer.write(.error(URLError(.networkConnectionLost)))
-                        return
+                while bytesToSend > 0 {
+                    if shouldProduceError, bytesToSend < (totalCount / 2) {
+                        throw URLError(.networkConnectionLost)
                     }
 
-                    guard let bytes = buffer.write({ $0.readSlice(length: segment) }) else {
+                    guard let bytes = buffer.readSlice(length: segment) else {
                         request.logger.info("Failed to read \(segment) bytes from buffer with \(buffer.readableBytes) bytes, ending write.")
-                        task.cancel()
-                        return
+                        throw Abort(.internalServerError)
                     }
 
-                    _ = writer.write(.buffer(bytes))
-                    bytesToSend.write { $0 -= segment }
+                    try await writer.writeBuffer(bytes)
+                    bytesToSend -= segment
+                    try await clock.sleep(for: .milliseconds(1))
                 }
             }))
-            response.headers.add(name: .acceptRanges, value: "bytes")
+            if !omitAcceptRanges { response.headers.add(name: .acceptRanges, value: "bytes") }
             response.headers.replaceOrAdd(name: .contentLength, value: "\(totalCount)")
             response.headers.remove(name: .transferEncoding)
         }
 
         response.headers.replaceOrAdd(name: .contentType, value: "application/octet-stream")
-        response.headers.add(name: .lastModified, value: lastModified)
+        if !omitLastModified { response.headers.add(name: .lastModified, value: lastModified) }
+        if includeETag { response.headers.add(name: .eTag, value: "\"v1\"") }
 
         return response
     }

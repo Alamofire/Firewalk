@@ -23,9 +23,12 @@
 //
 
 import AsyncKit
+import Dependencies
 import Vapor
 
 func createDataRoutes(for app: Application) throws {
+    @Dependency(\.continuousClock) var clock
+
     app.on(.GET, "bytes", ":count") { request -> Response in
         guard let count = request.parameters["count", as: Int.self], count <= 100_000 else {
             return Response(status: .badRequest)
@@ -81,15 +84,11 @@ func createDataRoutes(for app: Application) throws {
         }
 
         let delay = request.parameters["delay", as: Int64.self] ?? 20
-        let response = Response(body: .init(stream: { writer in
-            @Sendable
-            func sendByte(_ remaining: Int) {
-                guard remaining > 0 else { _ = writer.write(.end); return }
-                writer.write(.buffer(.init(integer: UInt8(remaining)))).whenComplete { _ in
-                    request.eventLoop.scheduleTask(in: .milliseconds(delay)) { sendByte(remaining - 1) }
-                }
+        let response = Response(body: .init(managedAsyncStream: { writer in
+            for remaining in stride(from: count, to: 0, by: -1) {
+                try await writer.writeBuffer(.init(integer: UInt8(remaining)))
+                try await clock.sleep(for: .milliseconds(delay))
             }
-            sendByte(count)
         }))
 
         response.headers.replaceOrAdd(name: .contentType, value: "application/octet-stream")
@@ -105,15 +104,11 @@ func createDataRoutes(for app: Application) throws {
         let encoder = JSONEncoder()
         let reply = try Reply(to: request)
         let encodedReply = try encoder.encodeAsByteBuffer(reply, allocator: app.allocator)
-        let response = Response(body: .init(stream: { writer in
-            @Sendable
-            func sendPayload(_ payloadsToSend: Int) {
-                guard payloadsToSend > 0 else { _ = writer.write(.end); return }
-                writer.write(.buffer(encodedReply)).whenComplete { _ in
-                    request.eventLoop.scheduleTask(in: .milliseconds(delay)) { sendPayload(payloadsToSend - 1) }
-                }
+        let response = Response(body: .init(managedAsyncStream: { writer in
+            for _ in 0..<count {
+                try await writer.writeBuffer(encodedReply)
+                try await clock.sleep(for: .milliseconds(delay))
             }
-            sendPayload(count)
         }))
 
         response.headers.replaceOrAdd(name: .contentType, value: "application/octet-stream")
@@ -121,23 +116,17 @@ func createDataRoutes(for app: Application) throws {
     }
 
     app.on(.GET, "infinite") { request -> Response in
-        Response(body: .init(stream: { writer in
+        Response(body: .init(managedAsyncStream: { writer in
             let buffer = request.application.allocator.buffer(repeating: 1, count: 100_000_000)
 
-            @Sendable
-            func writeBuffer() {
-                writer.write(.buffer(buffer)).whenComplete { result in
-                    switch result {
-                    case .success:
-                        request.eventLoop.execute { writeBuffer() }
-                    case let .failure(error):
-                        request.application.logger.error("Infinite stream finished with error: \(error)")
-                        _ = writer.write(.end)
-                    }
+            do {
+                while true {
+                    try await writer.writeBuffer(buffer)
                 }
+            } catch {
+                request.application.logger.error("Infinite stream finished with error: \(error)")
+                throw error
             }
-
-            writeBuffer()
         }))
     }
 }

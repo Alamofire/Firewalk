@@ -22,19 +22,20 @@
 //  THE SOFTWARE.
 //
 
+import Dependencies
 import Vapor
 
 func createMethodRoutes(for app: Application) throws {
+    @Dependency(\.continuousClock) var clock
+
     app.onMethods([.GET, .POST, .PUT, .PATCH, .DELETE], use: Reply.init(to:))
 
-    app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "delay", ":interval") { request -> EventLoopFuture<Reply> in
-        guard let interval = request.parameters["interval", as: Int64.self], interval <= 10 else {
-            return try request.eventLoop.future(Reply(to: request))
+    app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "delay", ":interval") { request async throws -> Reply in
+        if let interval = request.parameters["interval", as: Int64.self], interval <= 10 {
+            try await clock.sleep(for: .seconds(interval))
         }
 
-        let scheduled = request.eventLoop.scheduleTask(in: .seconds(interval)) { try Reply(to: request) }
-
-        return scheduled.futureResult
+        return try Reply(to: request)
     }
 
     app.on([.GET, .POST, .PUT, .PATCH, .DELETE], "status", ":code") { request -> Response in

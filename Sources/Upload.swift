@@ -25,37 +25,27 @@
 import Vapor
 
 func createUploadRoutes(for app: Application) throws {
-    app.on(.POST, "upload", body: .stream) { request -> EventLoopFuture<Response> in
-        let promise = request.eventLoop.makePromise(of: Response.self)
-
-        let bytesReceived = Protected(0)
-        request.body.drain { result in
-            switch result {
-            case let .buffer(buffer):
-                bytesReceived.write { $0 += buffer.readableBytes }
+    app.on(.POST, "upload", body: .stream) { request async throws -> Response in
+        var bytesReceived = 0
+        do {
+            for try await buffer in request.body {
+                bytesReceived += buffer.readableBytes
                 request.logger.info("Received \(bytesReceived) bytes so far.")
-                return request.eventLoop.makeSucceededVoidFuture()
-            case let .error(error):
-                app.logger.report(error: error)
-                return request.eventLoop.makeFailedFuture(error)
-            case .end:
-                app.logger.info("Upload of \(bytesReceived) bytes completed.")
-                let response: Response
-                do {
-                    let uploadResponse = UploadResponse(bytes: bytesReceived.read { $0 })
-                    let buffer = try JSONEncoder().encodeAsByteBuffer(uploadResponse, allocator: request.application.allocator)
-                    response = Response(status: .ok, body: .init(buffer: buffer))
-                } catch {
-                    app.logger.report(error: error)
-                    response = Response(status: .internalServerError)
-                }
-                promise.succeed(response)
-
-                return request.eventLoop.makeSucceededVoidFuture()
             }
+        } catch {
+            app.logger.report(error: error)
+            throw error
         }
 
-        return promise.futureResult
+        app.logger.info("Upload of \(bytesReceived) bytes completed.")
+        do {
+            let uploadResponse = UploadResponse(bytes: bytesReceived)
+            let buffer = try JSONEncoder().encodeAsByteBuffer(uploadResponse, allocator: request.application.allocator)
+            return Response(status: .ok, body: .init(buffer: buffer))
+        } catch {
+            app.logger.report(error: error)
+            return Response(status: .internalServerError)
+        }
     }
 }
 

@@ -7,12 +7,12 @@ on:
 jobs:
   release:
     name: Upload Release Artifact
-    runs-on: self-xcode266
+    runs-on: self-xcode272
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Build for Release
         run: swift build --build-system swiftbuild -c release --arch arm64 --arch x86_64
       - name: "Strip Artifact"
@@ -23,7 +23,7 @@ jobs:
         run: echo "::set-output name=upload_url::https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$(jq --raw-output '.release.id' $GITHUB_EVENT_PATH)/assets{?name,label}"
         id: release
       - name: "Upload Assets"
-        uses: "softprops/action-gh-release@v2"
+        uses: "softprops/action-gh-release@v3"
         if: github.ref_type == 'tag'
         with:
           files: firewalk.zip

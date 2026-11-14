@@ -31,8 +31,13 @@ public func configure(_ app: Application) throws {
     app.logger.logLevel = .critical
     #endif
 
-    app.routes.defaultMaxBodySize = 10_000_000
+    // Large enough for the biggest upload tests, so oversized bodies aren't rejected with a 413 mid-upload.
+    app.routes.defaultMaxBodySize = 100_000_000
     app.http.server.configuration.requestDecompression = .enabled
+    // Test suites running in parallel open bursts of connections; a deeper listen queue and accepting more connections
+    // per event loop tick keep those bursts from being refused. The OS may cap the backlog (kern.ipc.somaxconn on macOS).
+    app.http.server.configuration.backlog = 4096
+    app.http.server.configuration.connectionsPerServerTick = 1024
 
     try createBasicAuthRoutes(for: app)
     try createCompressionRoutes(for: app)
@@ -43,6 +48,7 @@ public func configure(_ app: Application) throws {
     try createImageRoutes(for: app)
     try createInspectionRoutes(for: app)
     try createMethodRoutes(for: app)
+    try createTLSRoutes(for: app)
     try createUploadRoutes(for: app)
     try createWebSocketRoutes(for: app)
     try createXMLRoute(for: app)
