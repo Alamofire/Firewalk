@@ -8,7 +8,37 @@ All notable changes to this project will be documented in this file.
 - `0.x` Releases - [0.1.0](#010) | [0.2.0](#020) | [0.3.0](#030) | [0.4.0](#040) | [0.5.0](#050) | [0.6.0](#060) | 
     [0.6.1](#061) | [0.7.0](#070) | [0.8.0](#080) | [0.8.1](#081) | [0.8.2](#082) | [0.8.3](#083) | [0.9.0](#090) | 
     [0.9.1](#091) | [0.10.0](#0100) | [0.10.1](#0101) | [0.10.2](#0102) | [0.10.3](#01003) | [0.10.4](#01004) | 
-    [0.11.0](#0110) | [0.12.3](#0123) | [0.13.0](#0130) | [0.14.0](#0140)
+    [0.11.0](#0110) | [0.12.3](#0123) | [0.13.0](#0130) | [0.14.0](#0140) | [0.15.0](#0150)
+
+---
+
+## [0.15.0](https://github.com/Alamofire/Firewalk/releases/tag/0.15.0)
+
+Released on 2026-11-14.
+
+#### Added
+
+- TLS server on port `8443` (configurable with `FIREWALK_TLS_PORT`) offering HTTP/1.1 and HTTP/2, using a self-signed
+  `localhost` certificate available from `/tls/certificate`.
+  - Added by [Jon Shier](https://github.com/jshier) in PR [#45](https://github.com/Alamofire/Firewalk/pull/45).
+- `etag`, `noLastModified`, and `noAcceptRanges` parameters to `/download`.
+  - Added by [Jon Shier](https://github.com/jshier) in PR [#45](https://github.com/Alamofire/Firewalk/pull/45).
+- `pongDelay` and `drop` parameters to `/websocket` routes.
+  - Added by [Jon Shier](https://github.com/jshier) in PR [#45](https://github.com/Alamofire/Firewalk/pull/45).
+
+#### Updated
+
+- Route implementations to use Swift concurrency rather than `EventLoopFuture`s.
+  - Updated by [Jon Shier](https://github.com/jshier) in PR [#45](https://github.com/Alamofire/Firewalk/pull/45).
+- Maximum body size and connection handling to better support parallel test suites.
+  - Updated by [Jon Shier](https://github.com/jshier) in PR [#45](https://github.com/Alamofire/Firewalk/pull/45).
+- Minimum macOS version to 13, dependencies, and CI to Xcode 27.2 and Swift 6.4.
+  - Updated by [Jon Shier](https://github.com/jshier) in PR [#45](https://github.com/Alamofire/Firewalk/pull/45).
+
+#### Fixed
+
+- `/download` handling of invalid and unsatisfiable `Range` requests.
+  - Fixed by [Jon Shier](https://github.com/jshier) in PR [#45](https://github.com/Alamofire/Firewalk/pull/45).
 
 ---
 

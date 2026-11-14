@@ -47,6 +47,14 @@ extension Application {
                    use closure: @escaping @Sendable (Request) throws -> some ResponseEncodable) -> [Route] {
         methods.map { on($0, .constant($0.rawValue.lowercased()), body: body, use: closure) }
     }
+
+    @discardableResult
+    func on(_ methods: [HTTPMethod],
+            _ path: PathComponent...,
+            body: HTTPBodyStreamStrategy = .collect,
+            use closure: @escaping @Sendable (Request) async throws -> some AsyncResponseEncodable) -> [Route] {
+        methods.map { on($0, path, body: body, use: closure) }
+    }
 }
 
 extension RoutesBuilder {
@@ -55,6 +63,14 @@ extension RoutesBuilder {
             _ path: PathComponent...,
             body: HTTPBodyStreamStrategy = .collect,
             use closure: @escaping @Sendable (Request) throws -> some ResponseEncodable) -> [Route] {
+        methods.map { on($0, path, body: body, use: closure) }
+    }
+
+    @discardableResult
+    func on(_ methods: [HTTPMethod],
+            _ path: PathComponent...,
+            body: HTTPBodyStreamStrategy = .collect,
+            use closure: @escaping @Sendable (Request) async throws -> some AsyncResponseEncodable) -> [Route] {
         methods.map { on($0, path, body: body, use: closure) }
     }
 }
