@@ -1,5 +1,5 @@
 {
-  "originHash" : "ee5ae116ddb4eb03f22f5b7def25e4528ecdc2796b36bc21dd1ea437bc5ebf50",
+  "originHash" : "1da92ce49e30208066636385a6afaca0b7ba2f2861dd213c8b036653f0dda68a",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "6bbb83cbf9d886623a967a965c8fb1b73e6566f9",
         "version" : "1.22.0"
-      }
-    },
-    {
-      "identity" : "combine-schedulers",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/combine-schedulers",
-      "state" : {
-        "revision" : "114354e8c1667a2edc4993700fb9fa4f90157b56",
-        "version" : "1.2.2"
       }
     },
     {

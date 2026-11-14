@@ -266,6 +266,14 @@ extension TestClock<Duration> {
 
 /// Connects a WebSocket client which records the messages and pongs it receives.
 private struct WebSocketClientSpy: Sendable {
+    /// Single event loop on which all client connections are set up.
+    ///
+    /// Setting up a client channel calls `NIOWebSocketClientUpgrader.randomRequestKey()`, whose `inout` access to an
+    /// empty `SystemRandomNumberGenerator` is reported by ThreadSanitizer as a Swift access race when two connections
+    /// are set up concurrently on different threads. That's a false positive, as no state is shared, but it fails
+    /// `swift test --sanitize=thread`. Setting up every client on the same event loop orders those accesses.
+    private static let eventLoop = MultiThreadedEventLoopGroup.singleton.next()
+
     let socket: WebSocket
     let messageCount: LockIsolated<Int>
     let messages: AsyncStream<ByteBuffer>
@@ -281,7 +289,7 @@ private struct WebSocketClientSpy: Sendable {
 
         // Vapor's async connect drops the URL's query, so use WebSocketKit's future-based connect.
         // Connecting completes before the upgrade, so wait for the upgraded socket.
-        let connection: EventLoopFuture<Void> = WebSocket.connect(to: url, on: app.eventLoopGroup) { connected in
+        let connection: EventLoopFuture<Void> = WebSocket.connect(to: url, on: eventLoop) { connected in
             socketContinuation.yield(connected)
             connected.onBinary { _, buffer in
                 messageCount.withValue { $0 += 1 }
