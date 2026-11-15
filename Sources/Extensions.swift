@@ -1,7 +1,7 @@
 //
 //  Extensions.swift
 //
-//  Copyright (c) 2020 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2020-2026 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -81,9 +81,45 @@ extension Parameters {
     }
 }
 
-extension HTTPServer.Configuration {
-    var address: String {
-        let scheme = tlsConfiguration == nil ? "http" : "https"
-        return "\(scheme)://\(hostname):\(port)"
+extension Request {
+    /// The scheme, host, and port clients use to reach this server, for URLs in responses. It uses the request's `Host`,
+    /// which is reachable even when the server listens on an address like `0.0.0.0`.
+    var baseURL: String {
+        let configuration = application.http.server.configuration
+        let scheme = configuration.tlsConfiguration == nil ? "http" : "https"
+        let host = headers.first(name: .host) ?? "\(configuration.hostname):\(configuration.port)"
+
+        return "\(scheme)://\(host)"
+    }
+}
+
+/// Rejects responses whose headers aren't valid HTTP with a `400`. Routes like `/response-headers` and `/redirect-to`
+/// copy request input into headers, and Vapor's server pipeline doesn't validate outbound headers, so a CR or LF there
+/// would otherwise split the response.
+struct ResponseHeaderValidationMiddleware: AsyncMiddleware {
+    func respond(to request: Request, chainingTo next: any AsyncResponder) async throws -> Response {
+        let response = try await next.respond(to: request)
+        guard response.headers.allSatisfy({ Self.isValidName($0.name) && Self.isValidValue($0.value) }) else {
+            return Response(status: .badRequest)
+        }
+
+        return response
+    }
+
+    /// A token, per RFC 9110.
+    static func isValidName(_ name: String) -> Bool {
+        !name.isEmpty && name.utf8.allSatisfy { byte in
+            switch byte {
+            case UInt8(ascii: "0")...UInt8(ascii: "9"), UInt8(ascii: "a")...UInt8(ascii: "z"), UInt8(ascii: "A")...UInt8(ascii: "Z"):
+                true
+            default:
+                "!#$%&'*+-.^_`|~".utf8.contains(byte)
+            }
+        }
+    }
+
+    /// Without the control characters RFC 9110 forbids, other than horizontal tab.
+    static func isValidValue(_ value: String) -> Bool {
+        value.utf8.allSatisfy { byte in byte == UInt8(ascii: "\t") || (byte >= 0x20 && byte != 0x7F) }
     }
 }

@@ -1,7 +1,7 @@
 //
 //  configure.swift
 //
-//  Copyright (c) 2020 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2020-2026 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -25,19 +25,16 @@
 import Vapor
 
 public func configure(_ app: Application) throws {
-    #if DEBUG
-    app.logger.logLevel = .info
-    #else
-    app.logger.logLevel = .critical
-    #endif
+    try configure(app, settings: .default)
+}
 
-    // Large enough for the biggest upload tests, so oversized bodies aren't rejected with a 413 mid-upload.
-    app.routes.defaultMaxBodySize = 100_000_000
+func configure(_ app: Application, settings: Settings) throws {
+    app.logger.logLevel = settings.logLevel
+    app.routes.defaultMaxBodySize = ByteCount(value: settings.maxBodySize)
     app.http.server.configuration.requestDecompression = .enabled
-    // Test suites running in parallel open bursts of connections; a deeper listen queue and accepting more connections
-    // per event loop tick keep those bursts from being refused. The OS may cap the backlog (kern.ipc.somaxconn on macOS).
-    app.http.server.configuration.backlog = 4096
-    app.http.server.configuration.connectionsPerServerTick = 1024
+    app.http.server.configuration.backlog = settings.backlog
+    app.http.server.configuration.connectionsPerServerTick = settings.connectionsPerTick
+    app.middleware.use(ResponseHeaderValidationMiddleware())
 
     try createBasicAuthRoutes(for: app)
     try createCompressionRoutes(for: app)
@@ -50,6 +47,7 @@ public func configure(_ app: Application) throws {
     try createMethodRoutes(for: app)
     try createTLSRoutes(for: app)
     try createUploadRoutes(for: app)
+    try createVersionRoute(for: app)
     try createWebSocketRoutes(for: app)
     try createXMLRoute(for: app)
 }

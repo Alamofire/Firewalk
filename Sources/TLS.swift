@@ -55,7 +55,8 @@ enum TLSIdentity {
         }
         let now = Date()
         let certificate = try Certificate(version: .v3,
-                                          serialNumber: .init(),
+                                          // SerialNumber() crashes when built with Thread Sanitizer, so the bytes are made here.
+                                          serialNumber: .init(bytes: (0..<20).map { _ in UInt8.random(in: 1...0x7F) }),
                                           publicKey: .init(privateKey.publicKey),
                                           notValidBefore: now.addingTimeInterval(-60 * 60),
                                           // Apple platforms reject TLS server certificates valid for more than 825 days.
@@ -77,6 +78,18 @@ enum TLSIdentity {
         try serializer.serialize(certificate)
 
         return (serializer.serializedBytes, privateKey)
+    }
+}
+
+extension ExpiredCertificates {
+    /// `TLSConfiguration` presenting the whole expired chain, including the root, so clients can pin any of them.
+    static func serverConfiguration() throws -> TLSConfiguration {
+        let chain = try [leaf, intermediate2, intermediate1, root].map {
+            try NIOSSLCertificateSource.certificate(NIOSSLCertificate(bytes: Array($0.utf8), format: .pem))
+        }
+        let privateKey = try NIOSSLPrivateKey(bytes: Array(leafPrivateKey.utf8), format: .pem)
+
+        return .makeServerConfiguration(certificateChain: chain, privateKey: .privateKey(privateKey))
     }
 }
 

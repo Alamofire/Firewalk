@@ -1,7 +1,7 @@
 //
 //  Data.swift
 //
-//  Copyright (c) 2020 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2020-2026 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@ func createDataRoutes(for app: Application) throws {
     @Dependency(\.continuousClock) var clock
 
     app.on(.GET, "bytes", ":count") { request -> Response in
-        guard let count = request.parameters["count", as: Int.self], count <= 100_000 else {
+        guard let count = request.parameters["count", as: Int.self], (0...100_000).contains(count) else {
             return Response(status: .badRequest)
         }
 
@@ -56,19 +56,19 @@ func createDataRoutes(for app: Application) throws {
 
         let encoder = JSONEncoder()
         let reply = try Reply(to: request)
-        var encodedReply = try encoder.encodeAsByteBuffer(reply, allocator: app.allocator)
+        let encodedReply = try encoder.encodeAsByteBuffer(reply, allocator: app.allocator)
         var buffer = app.allocator.buffer(capacity: (encodedReply.readableBytes * count) + (count - 1))
         for _ in 1..<count {
-            buffer.writeBuffer(&encodedReply)
+            buffer.writeImmutableBuffer(encodedReply)
             buffer.writeString("\n")
         }
-        buffer.writeBuffer(&encodedReply)
+        buffer.writeImmutableBuffer(encodedReply)
 
         return Response(body: .init(buffer: buffer))
     }
 
     app.on(.GET, "manyBytes", ":count") { request -> Response in
-        guard let count = request.parameters["count", as: Int.self], count <= 10_000_000 else {
+        guard let count = request.parameters["count", as: Int.self], (0...10_000_000).contains(count) else {
             return Response(status: .badRequest)
         }
 
@@ -115,16 +115,17 @@ func createDataRoutes(for app: Application) throws {
         return response
     }
 
+    // Shared by every request, as writes don't copy it.
+    let infiniteBuffer = app.allocator.buffer(repeating: 1, count: 1 << 20)
     app.on(.GET, "infinite") { request -> Response in
         Response(body: .init(managedAsyncStream: { writer in
-            let buffer = request.application.allocator.buffer(repeating: 1, count: 100_000_000)
-
             do {
                 while true {
-                    try await writer.writeBuffer(buffer)
+                    try await writer.writeBuffer(infiniteBuffer)
                 }
             } catch {
-                request.application.logger.error("Infinite stream finished with error: \(error)")
+                // Clients end the stream by disconnecting, so this is expected.
+                request.logger.debug("Infinite stream finished: \(error)")
                 throw error
             }
         }))

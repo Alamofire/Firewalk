@@ -1,7 +1,7 @@
 //
 //  Images.swift
 //
-//  Copyright (c) 2022 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2022-2026 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -34,14 +34,13 @@ func createImageRoutes(for app: Application) throws {
         response.headers.contentType = image.contentType
         response.headers.contentDisposition = .init(.attachment, filename: image.suggestedFilename)
 
-        let imageData = Data(base64Encoded: image.encodedImage)!
-        response.body = .init(data: imageData)
+        response.body = .init(data: image.data)
 
         return response
     }
 }
 
-private enum Image: String, Decodable {
+enum Image: String, CaseIterable {
     case avif, bmp, jp2, jpeg, jxl, gif, heic, heif, pdf, png, tiff, webp
 
     var contentType: HTTPMediaType {
@@ -133,6 +132,13 @@ private enum Image: String, Decodable {
         case .webp:
             "UklGRhYAAABXRUJQVlA4TAkAAAAvAAAAAIiI/gcA"
         }
+    }
+
+    private static let decoded = Dictionary(uniqueKeysWithValues: allCases.map { ($0, Data(base64Encoded: $0.encodedImage)) })
+
+    /// The image's bytes, or empty if its encoding is invalid, which tests check for.
+    var data: Data {
+        Self.decoded[self].flatMap(\.self) ?? Data()
     }
 
     var suggestedFilename: String {
