@@ -1,7 +1,7 @@
 //
 //  Upload.swift
 //
-//  Copyright (c) 2022 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2022-2026 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@ func createUploadRoutes(for app: Application) throws {
         do {
             for try await buffer in request.body {
                 bytesReceived += buffer.readableBytes
-                request.logger.info("Received \(bytesReceived) bytes so far.")
+                request.logger.debug("Received \(bytesReceived) bytes so far.")
             }
         } catch {
             app.logger.report(error: error)

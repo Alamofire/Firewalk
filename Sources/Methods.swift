@@ -1,7 +1,7 @@
 //
 //  Methods.swift
 //
-//  Copyright (c) 2020 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2020-2026 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -52,25 +52,16 @@ func createMethodRoutes(for app: Application) throws {
             } else {
                 let reply = try Reply(to: request)
                 let encodedReply = try JSONEncoder().encodeAsByteBuffer(reply, allocator: app.allocator)
-                return Response(status: .init(statusCode: code), body: .init(buffer: encodedReply))
+                let response = Response(status: .init(statusCode: code), body: .init(buffer: encodedReply))
+                response.headers.contentType = .json
+                return response
             }
         case 300..<400:
             let response = Response(status: .init(statusCode: code))
-            let address = app.http.server.configuration.address
-            let path = request.method.rawValue.lowercased()
-            let redirectAddress = "\(address)/\(path)"
-            response.headers.replaceOrAdd(name: .location, value: redirectAddress)
-            return response
-        case 400..<600:
-            let response = Response(status: .init(statusCode: code))
-            // NIO stops parsing HTTP when an upgrade is detected, so close the connection.
-            // Remove if NIO / Vapor fixes the issue.
-            if request.headers.contains(name: .upgrade) {
-                response.headers.connection = .close
-            }
+            response.headers.replaceOrAdd(name: .location, value: "\(request.baseURL)/\(request.method.rawValue.lowercased())")
             return response
         default:
-            let response = Response(status: .badRequest)
+            let response = Response(status: code < 600 ? .init(statusCode: code) : .badRequest)
             // NIO stops parsing HTTP when an upgrade is detected, so close the connection.
             // Remove if NIO / Vapor fixes the issue.
             if request.headers.contains(name: .upgrade) {
@@ -93,13 +84,10 @@ func createMethodRoutes(for app: Application) throws {
     app.on(.GET, "redirect", ":count") { request -> Response in
         guard let count = request.parameters["count", as: Int.self], count > 0, count < 100 else { return Response(status: .badRequest) }
 
-        let url: String
-        if count > 1 {
-            url = "\(request.application.http.server.configuration.address)/redirect/\(count - 1)"
+        let url = if count > 1 {
+            "\(request.baseURL)/redirect/\(count - 1)"
         } else {
-            let address = app.http.server.configuration.address
-            let path = request.method.rawValue.lowercased()
-            url = "\(address)/\(path)"
+            "\(request.baseURL)/\(request.method.rawValue.lowercased())"
         }
         let response = Response(status: .found)
         response.headers.replaceOrAdd(name: .location, value: url)

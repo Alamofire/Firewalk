@@ -1,7 +1,7 @@
 //
 //  Download.swift
 //
-//  Copyright (c) 2021 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2021-2026 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -30,78 +30,43 @@ func createDownloadRoutes(for app: Application) throws {
 
     app.on(.GET, "download", ":count") { request -> Response in
         guard let totalCount = request.parameters["count", as: Int.self],
-              totalCount <= 10_000_000,
+              (0...10_000_000).contains(totalCount),
               totalCount.isMultiple(of: 10) else {
             return .init(status: .badRequest)
         }
 
         let shouldProduceError = (try? request.query.get(Bool.self, at: "shouldProduceError")) ?? false
-
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        formatter.dateFormat = "EEE, dd MMM yyyy hh:mm:ss zzz"
-        let lastModified = formatter.string(from: Date(timeIntervalSinceReferenceDate: 0))
-
         let includeETag = (try? request.query.get(Bool.self, at: "etag")) ?? false
         let omitLastModified = (try? request.query.get(Bool.self, at: "noLastModified")) ?? false
         let omitAcceptRanges = (try? request.query.get(Bool.self, at: "noAcceptRanges")) ?? false
 
-        request.logger.info("download \(totalCount) Range=\(request.headers.first(name: .range) ?? "nil") If-Range=\(request.headers.first(name: .ifRange) ?? "nil") If-Match=\(request.headers.first(name: .ifMatch) ?? "nil")")
+        request.logger.debug("download \(totalCount) Range=\(request.headers.first(name: .range) ?? "nil") If-Range=\(request.headers.first(name: .ifRange) ?? "nil") If-Match=\(request.headers.first(name: .ifMatch) ?? "nil")")
 
         let response: Response
-
-        // RFC 9110: a range whose last position precedes its first is invalid, so the header is ignored.
-        let validRange = request.headers.range.flatMap { range in
-            range.ranges.allSatisfy { value in
-                if case let .within(start, end) = value { return start <= end }
-                return true
-            } ? range : nil
-        }
-
-        if let range = validRange {
-            let startOffset: Int? = range.ranges.first.flatMap {
-                if case let .start(value) = $0 { return value }
-                if case let .within(start, _) = $0 { return start }
-                return nil
-            }
-            if let startOffset, startOffset >= totalCount {
-                let rejected = Response(status: .rangeNotSatisfiable)
-                rejected.headers.replaceOrAdd(name: .contentRange, value: "bytes */\(totalCount)")
-                return rejected
-            }
-
-            let byteCount = range.ranges.reduce(0) { result, value in
-                switch value {
-                case let .start(value):
-                    result + (totalCount - value)
-                case let .tail(value):
-                    result + value
-                case let .within(start, end):
-                    result + (end - start)
-                }
-            }
-
-            let buffer = request.application.allocator.buffer(repeating: UInt8.random(), count: byteCount)
+        switch ByteRange(request.headers.range, length: totalCount) {
+        case .unsatisfiable:
+            let rejected = Response(status: .rangeNotSatisfiable)
+            rejected.headers.replaceOrAdd(name: .contentRange, value: "bytes */\(totalCount)")
+            return rejected
+        case let .satisfiable(bounds):
+            let buffer = request.application.allocator.buffer(repeating: UInt8.random(), count: bounds.count)
             response = Response(status: .partialContent, body: .init(buffer: buffer))
-            response.headers.contentRange = .init(unit: .bytes, range: .within(start: totalCount - byteCount, end: totalCount))
-        } else {
+            response.headers.contentRange = .init(unit: .bytes,
+                                                  range: .withinWithLimit(start: bounds.lowerBound,
+                                                                          end: bounds.upperBound,
+                                                                          limit: totalCount))
+        case .whole:
             response = Response(body: .init(managedAsyncStream: { writer in
-                var buffer = request.application.allocator.buffer(repeating: UInt8.random(), count: totalCount)
+                // The body repeats one byte, so one segment is written ten times, as writes don't copy it.
+                let segment = request.application.allocator.buffer(repeating: UInt8.random(), count: totalCount / 10)
                 var bytesToSend = totalCount
-                let segment = (totalCount / 10)
                 while bytesToSend > 0 {
                     if shouldProduceError, bytesToSend < (totalCount / 2) {
                         throw URLError(.networkConnectionLost)
                     }
 
-                    guard let bytes = buffer.readSlice(length: segment) else {
-                        request.logger.info("Failed to read \(segment) bytes from buffer with \(buffer.readableBytes) bytes, ending write.")
-                        throw Abort(.internalServerError)
-                    }
-
-                    try await writer.writeBuffer(bytes)
-                    bytesToSend -= segment
+                    try await writer.writeBuffer(segment)
+                    bytesToSend -= segment.readableBytes
                     try await clock.sleep(for: .milliseconds(1))
                 }
             }))
@@ -115,5 +80,39 @@ func createDownloadRoutes(for app: Application) throws {
         if includeETag { response.headers.add(name: .eTag, value: "\"v1\"") }
 
         return response
+    }
+}
+
+/// Last-Modified for every download, so validators match across requests.
+private let lastModified = Date(timeIntervalSinceReferenceDate: 0).rfc1123
+
+/// What a `Range` header selects from a body of `length` bytes, per RFC 9110.
+enum ByteRange: Equatable {
+    /// The whole body, as when there's no `Range`, it's invalid, or it asks for more than one range, which would need a
+    /// `multipart/byteranges` response.
+    case whole
+    /// No bytes, for a `416`.
+    case unsatisfiable
+    /// The first and last offsets of the bytes selected.
+    case satisfiable(ClosedRange<Int>)
+
+    init(_ range: HTTPHeaders.Range?, length: Int) {
+        guard let range, range.unit == .bytes, range.ranges.count == 1, let value = range.ranges.first else {
+            self = .whole
+            return
+        }
+
+        switch value {
+        case let .start(start):
+            self = start < length ? .satisfiable(start...(length - 1)) : .unsatisfiable
+        case let .tail(count):
+            self = count > 0 && length > 0 ? .satisfiable(max(length - count, 0)...(length - 1)) : .unsatisfiable
+        case let .within(start, end):
+            if start > end {
+                self = .whole
+            } else {
+                self = start < length ? .satisfiable(start...min(end, length - 1)) : .unsatisfiable
+            }
+        }
     }
 }

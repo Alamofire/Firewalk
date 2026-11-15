@@ -1,7 +1,7 @@
 //
 //  Inspection.swift
 //
-//  Copyright (c) 2022 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2022-2026 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 //  THE SOFTWARE.
 //
 
+import Synchronization
 import Vapor
 
 func createInspectionRoutes(for app: Application) throws {
@@ -31,7 +32,7 @@ func createInspectionRoutes(for app: Application) throws {
         return Response(status: .ok, headers: HTTPHeaders(query.map(\.self)), body: .init(buffer: encodedHeaders))
     }
 
-    let seenCaches = Protected<Set<String>>([])
+    let seenCaches = Mutex<Set<String>>([])
 
     // A version of response-headers used for Cache-Control tests, which adds an older Date to the response the first
     // time it's seen.
@@ -43,28 +44,17 @@ func createInspectionRoutes(for app: Application) throws {
         let encodedHeaders = try JSONEncoder().encodeAsByteBuffer(query, allocator: app.allocator)
         let response = Response(status: .ok, headers: HTTPHeaders(query.map(\.self)), body: .init(buffer: encodedHeaders))
 
-        seenCaches.write { seenCaches in
-            if seenCaches.contains(cache) {
-                seenCaches.remove(cache)
-            } else {
-                seenCaches.insert(cache)
-                let past = Date() - 5
-                response.headers.replaceOrAdd(name: .date, value: DateFormatter.rfc1123.string(from: past))
-            }
+        // Alternates, so every other request for the same Cache-Control value is a first request.
+        let isFirstRequest = seenCaches.withLock { seenCaches in
+            if seenCaches.remove(cache) != nil { return false }
+
+            seenCaches.insert(cache)
+            return true
+        }
+        if isFirstRequest {
+            response.headers.replaceOrAdd(name: .date, value: (Date() - 5).rfc1123)
         }
 
         return response
     }
-}
-
-extension DateFormatter {
-    fileprivate static let rfc1123: DateFormatter = {
-        let formatter = DateFormatter()
-        let enUSPosixLocale = Locale(identifier: "en_US_POSIX")
-        formatter.locale = enUSPosixLocale
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss z"
-        formatter.calendar = Calendar(identifier: .gregorian)
-        return formatter
-    }()
 }

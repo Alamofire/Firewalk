@@ -1,7 +1,7 @@
 //
 //  WebSocket.swift
 //
-//  Copyright (c) 2020-2021 Alamofire Software Foundation (http://alamofire.org/)
+//  Copyright (c) 2020-2026 Alamofire Software Foundation (http://alamofire.org/)
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 import Dependencies
 import NIO
 import NIOWebSocket
+import Synchronization
 import Vapor
 
 func createWebSocketRoutes(for app: Application) throws {
@@ -49,7 +50,7 @@ func createWebSocketRoutes(for app: Application) throws {
         let closeCode = options?.closeCode ?? .normalClosure
         let closeDelay = options?.closeDelay ?? 0
         let messageDelay = options?.messageDelay ?? 0
-        let count = request.parameters["count", as: Int.self] ?? 1
+        let count = max(request.parameters["count", as: Int.self] ?? 1, 0)
         let payload = try Reply(to: request)
         let payloadBuffer = try JSONEncoder().encodeAsByteBuffer(payload, allocator: app.allocator)
 
@@ -82,15 +83,20 @@ func createWebSocketRoutes(for app: Application) throws {
     }
 
     app.webSocket("websocket", "ping", ":count") { request, socket in
-        if let pongDelay = (try? request.query.decode(WebSocketOptions.self))?.pongDelay {
+        let options = try? request.query.decode(WebSocketOptions.self)
+        if let pongDelay = options?.pongDelay {
             socket.delayPongs(by: .milliseconds(pongDelay), using: clock)
         }
 
-        let shouldDrop = (try? request.query.decode(WebSocketOptions.self))?.drop ?? false
-        let remainingPings = Protected(request.parameters["count", as: Int.self] ?? 1)
+        let shouldDrop = options?.drop ?? false
+        // Fewer than one ping would never close the socket.
+        let remainingPings = Mutex(max(request.parameters["count", as: Int.self] ?? 1, 1))
         socket.onPing { socket, _ in
-            remainingPings.write { $0 -= 1 }
-            if remainingPings.read({ $0 == 0 }) {
+            let isLastPing = remainingPings.withLock { remainingPings in
+                remainingPings -= 1
+                return remainingPings == 0
+            }
+            if isLastPing {
                 if shouldDrop {
                     socket.drop()
                 } else {
@@ -158,7 +164,8 @@ private func webSocketShouldUpgrade(_ request: Request, clock: any Clock<Duratio
     }
 
     var headers = HTTPHeaders()
-    if let requestedProtocol = request.headers[.secWebSocketProtocol].first?.components(separatedBy: ", ").first {
+    let requestedProtocols = request.headers[.secWebSocketProtocol].flatMap { $0.split(separator: ",") }
+    if let requestedProtocol = requestedProtocols.first?.trimmingCharacters(in: .whitespaces), !requestedProtocol.isEmpty {
         headers.add(name: .secWebSocketProtocol, value: requestedProtocol)
     }
 

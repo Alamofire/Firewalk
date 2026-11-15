@@ -8,7 +8,71 @@ All notable changes to this project will be documented in this file.
 - `0.x` Releases - [0.1.0](#010) | [0.2.0](#020) | [0.3.0](#030) | [0.4.0](#040) | [0.5.0](#050) | [0.6.0](#060) | 
     [0.6.1](#061) | [0.7.0](#070) | [0.8.0](#080) | [0.8.1](#081) | [0.8.2](#082) | [0.8.3](#083) | [0.9.0](#090) | 
     [0.9.1](#091) | [0.10.0](#0100) | [0.10.1](#0101) | [0.10.2](#0102) | [0.10.3](#01003) | [0.10.4](#01004) | 
-    [0.11.0](#0110) | [0.12.3](#0123) | [0.13.0](#0130) | [0.14.0](#0140) | [0.15.0](#0150)
+    [0.11.0](#0110) | [0.12.3](#0123) | [0.13.0](#0130) | [0.14.0](#0140) | [0.15.0](#0150) | [0.16.0](#0160)
+
+---
+
+## [0.16.0](https://github.com/Alamofire/Firewalk/releases/tag/0.16.0)
+
+Released on 2026-11-15.
+
+#### Added
+
+- TLS server on port `8444` (configurable with `--expired-tls-port` or `FIREWALK_EXPIRED_TLS_PORT`) presenting an expired `localhost` and
+  `127.0.0.1` certificate, issued through two intermediate CAs by an untrusted root, as a local replacement for
+  expired.badssl.com.
+  - Added by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- HTTP digest authentication on `/digest-auth/{qop}/{user}/{passwd}/{algorithm}/{staleAfter}`, replacing the redirect
+  to httpbin.org. It supports `auth` and `auth-int`, the `MD5`, `MD5-sess`, `SHA-256`, and `SHA-256-sess` algorithms,
+  hashed and RFC 8187 encoded usernames, `stale=true` for nonces past their five minute lifetime or `staleAfter` uses,
+  and rejects repeated `nc` values.
+  - Added by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- Command line options, with matching environment variables, for the hostname, each port, maximum body size, listen
+  backlog, connections accepted per event loop tick, and log level. See `firewalk --help`.
+  - Added by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- `/brotli`, `/gzip`, and `/deflate` served locally, replacing the redirects to httpbin.org. `gzip` and `deflate` use
+  the system's zlib on every platform. Brotli uses Apple's Compression framework, so other platforms respond to
+  `/brotli` with `501 Not Implemented`.
+  - Added by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- `/version`, returning Firewalk's version and its major, minor, and patch components, so clients can check that
+  Firewalk supports the routes and behaviors they use. `firewalk --version` prints it too.
+  - Added by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+
+#### Updated
+
+- Command line handling to use Swift Argument Parser. Vapor's `serve` command and its `--env` and `--log` arguments
+  are no longer accepted; use the options above instead.
+  - Updated by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- Minimum macOS version to 26, so release binaries use the OS's Swift runtime, including `Span`, rather than needing
+  `libswiftCompatibilitySpan.dylib` alongside them, and can use `Mutex`.
+  - Updated by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- Minimum Swift version to 6.4, enforced when building.
+  - Updated by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+
+#### Fixed
+
+- `/websocket` ping counting, which could miss or repeat the close after the last ping when pings arrived together.
+  - Fixed by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- Crashes from negative counts in `/bytes`, `/manyBytes`, `/download`, and `/websocket/payloads`.
+  - Fixed by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- `/stream` returning one reply followed by empty lines.
+  - Fixed by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- `/download` ranges, which returned one byte too few from the wrong offset, and `Content-Range` values, which now end
+  at the last byte and include the total length. Requests for several ranges now receive the whole body.
+  - Fixed by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- `/download`'s `Last-Modified` using a 12 hour clock.
+  - Fixed by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- Response URLs and redirect locations using the listening address, such as `0.0.0.0`, rather than the request's host.
+  - Fixed by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- `/status` 2xx responses missing their JSON `Content-Type`.
+  - Fixed by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- WebSocket subprotocol selection for `Sec-WebSocket-Protocol` values without spaces after commas.
+  - Fixed by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- Response splitting through routes that copy request input into headers, like `/response-headers`, `/cache`, and
+  `/redirect-to`. Responses with invalid headers are now replaced with a `400 Bad Request`.
+  - Fixed by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
+- Startup crashes when Firewalk is built with Thread Sanitizer.
+  - Fixed by [Jon Shier](https://github.com/jshier) in PR [#46](https://github.com/Alamofire/Firewalk/pull/46).
 
 ---
 
